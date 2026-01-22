@@ -62,11 +62,12 @@ net-garminconnect/
 - [x] Виправлено: захист від нескінченного циклу в пагінації
 - [x] Unit tests (44 нових тести, 108 всього)
 
-### Фаза 4: FIT протокол
-- [ ] `FitEncoder.cs` - базове кодування FIT
-- [ ] `FitEncoderWeight.cs` - кодування ваги
-- [ ] `FitEncoderBloodPressure.cs` - кодування артеріального тиску
-- [ ] Інтеграція з upload методами
+### Фаза 4: FIT протокол ✅ ЗАВЕРШЕНО
+- [x] `FitEncoder.cs` - базове кодування FIT (CRC, header, records)
+- [x] `FitEncoderWeight.cs` - кодування ваги та body composition
+- [x] `FitEncoderBloodPressure.cs` - кодування артеріального тиску
+- [x] Інтеграція з GarminClient: `AddBodyCompositionAsync`, `AddBloodPressureAsync`
+- [x] Unit tests (21 новий тест, 129 всього)
 
 ### Фаза 5: Розширені API (пізніше, за потреби)
 - [ ] Body Composition & Weight (8 методів)
@@ -151,8 +152,8 @@ net-garminconnect/
 
 | Метрика | Значення |
 |---------|----------|
-| Фази завершено | 3 з 7 |
-| Тестів | 108 |
-| Методів API | ~30 реалізовано |
+| Фази завершено | 4 з 7 |
+| Тестів | 129 |
+| Методів API | ~32 реалізовано |
 
-**Наступний крок:** Фаза 4 - FIT протокол
+**Наступний крок:** Фаза 5 - Розширені API (за потреби) або Фаза 6 - DI та Resilience
