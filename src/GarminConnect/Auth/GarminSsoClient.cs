@@ -239,7 +239,7 @@ internal sealed partial class GarminSsoClient : IDisposable
         var location = response.Headers.Location?.ToString();
         if (location is not null)
         {
-            var ticketFromUrl = TicketFromUrlRegex().Match(location);
+            var ticketFromUrl = TicketRegex().Match(location);
             if (ticketFromUrl.Success)
             {
                 return new LoginResult { Ticket = ticketFromUrl.Groups[1].Value };
@@ -283,7 +283,7 @@ internal sealed partial class GarminSsoClient : IDisposable
         var location = response.Headers.Location?.ToString();
         if (location is not null)
         {
-            var ticketFromUrl = TicketFromUrlRegex().Match(location);
+            var ticketFromUrl = TicketRegex().Match(location);
             if (ticketFromUrl.Success)
             {
                 _mfaClientState = null;
@@ -464,9 +464,6 @@ internal sealed partial class GarminSsoClient : IDisposable
 
     [GeneratedRegex(@"ticket=([A-Za-z0-9\-_]+)", RegexOptions.IgnoreCase)]
     private static partial Regex TicketRegex();
-
-    [GeneratedRegex(@"ticket=([A-Za-z0-9\-_]+)", RegexOptions.IgnoreCase)]
-    private static partial Regex TicketFromUrlRegex();
 
     [GeneratedRegex(@"MFA_TOKEN[""']?\s*[:=]\s*[""']?([^""']+)", RegexOptions.IgnoreCase)]
     private static partial Regex MfaStateRegex();
