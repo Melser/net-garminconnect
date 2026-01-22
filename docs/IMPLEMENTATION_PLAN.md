@@ -53,11 +53,14 @@ net-garminconnect/
 - [x] Тестування логіну та збереження токенів
 - [x] Unit tests (64 тести)
 
-### Фаза 3: Основні API (Health & Activities) - ПРІОРИТЕТ
-- [ ] Моделі: `DailySummary`, `HeartRateData`, `SleepData`, `Activity`
-- [ ] `GarminClient.Health.cs`: GetDailySummary, GetHeartRates, GetSleep, GetStress, GetBodyBattery
-- [ ] `GarminClient.Activity.cs`: GetActivities, GetActivityDetails, Download/Upload
-- [ ] User & Profile (4 методи)
+### Фаза 3: Основні API (Health & Activities) ✅ ЗАВЕРШЕНО
+- [x] Моделі: `DailySummary`, `HeartRateData`, `SleepData`, `Activity`, `ActivityDetails`, `BodyBattery`, `Stress`, `UserProfile`
+- [x] `GarminClient.Health.cs`: GetDailySummary, GetHeartRates, GetSleep, GetStress, GetBodyBattery
+- [x] `GarminClient.Activity.cs`: GetActivities, GetActivityDetails, Download/Upload, Delete
+- [x] `GarminClient.User.cs`: GetDisplayName, GetFullName, GetUnitSystem, GetUserProfile, GetUserSettings
+- [x] Виправлено: кешування користувача (очищення при logout)
+- [x] Виправлено: захист від нескінченного циклу в пагінації
+- [x] Unit tests (44 нових тести, 108 всього)
 
 ### Фаза 4: FIT протокол
 - [ ] `FitEncoder.cs` - базове кодування FIT
@@ -140,4 +143,16 @@ net-garminconnect/
 - **~40 моделей** (records для API responses)
 - **~127 методів API** (partial classes)
 - **~15 файлів інфраструктури** (Auth, API, Exceptions)
-- **~50+ unit tests** (поточний стан: 64 тести)
+- **108 unit tests** (всі проходять)
+
+---
+
+## Поточний стан
+
+| Метрика | Значення |
+|---------|----------|
+| Фази завершено | 3 з 7 |
+| Тестів | 108 |
+| Методів API | ~30 реалізовано |
+
+**Наступний крок:** Фаза 4 - FIT протокол
