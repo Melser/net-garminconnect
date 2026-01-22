@@ -48,7 +48,12 @@ public interface IGarminApiClient : IDisposable, IAsyncDisposable
     /// <summary>
     /// Uploads a file using POST request.
     /// </summary>
-    Task<T> PostFileAsync<T>(string endpoint, Stream file, string fileName, CancellationToken cancellationToken = default);
+    /// <param name="endpoint">API endpoint.</param>
+    /// <param name="file">File stream.</param>
+    /// <param name="fileName">File name.</param>
+    /// <param name="contentType">Content type (default: application/octet-stream).</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    Task<T> PostFileAsync<T>(string endpoint, Stream file, string fileName, string? contentType = null, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Sets the access token for authenticated requests.

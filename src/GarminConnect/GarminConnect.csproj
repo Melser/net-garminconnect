@@ -29,6 +29,11 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <!-- Allow tests to access internal members -->
+    <InternalsVisibleTo Include="GarminConnect.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
     <!-- Core dependencies -->
     <PackageReference Include="Microsoft.Extensions.Http" Version="8.0.0" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.0" />

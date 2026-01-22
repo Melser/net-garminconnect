@@ -17,116 +17,106 @@ internal static class Endpoints
 
     #region Daily Summary & Stats
 
-    public static string DailySummary(DateOnly date) =>
-        $"/usersummary-service/usersummary/daily/{date:yyyy-MM-dd}";
+    /// <summary>Daily summary endpoint. Format: {0} = date (yyyy-MM-dd)</summary>
+    public const string DailySummary = "/usersummary-service/usersummary/daily/{0}";
 
-    public static string UserSummaryChart(DateOnly date) =>
-        $"/wellness-service/wellness/dailySummaryChart/{date:yyyy-MM-dd}";
+    /// <summary>User summary chart endpoint. Format: {0} = date (yyyy-MM-dd)</summary>
+    public const string UserSummaryChart = "/wellness-service/wellness/dailySummaryChart/{0}";
 
     #endregion
 
     #region Steps
 
-    public static string StepsData(DateOnly date) =>
-        $"/wellness-service/wellness/dailySteps/{date:yyyy-MM-dd}";
+    /// <summary>Steps data endpoint. Format: {0} = date (yyyy-MM-dd)</summary>
+    public const string StepsData = "/wellness-service/wellness/dailySteps/{0}";
 
-    public static string DailySteps(DateOnly startDate, DateOnly endDate) =>
-        $"/wellness-service/wellness/dailySteps?startDate={startDate:yyyy-MM-dd}&endDate={endDate:yyyy-MM-dd}";
+    /// <summary>Daily steps range endpoint (use with query params).</summary>
+    public const string DailySteps = "/wellness-service/wellness/dailySteps";
 
-    public static string WeeklySteps(DateOnly endDate, int weeks = 1) =>
-        $"/wellness-service/stats/weekly/steps/{endDate:yyyy-MM-dd}/{weeks}";
+    /// <summary>Weekly steps endpoint. Format: {0} = date (yyyy-MM-dd), {1} = weeks</summary>
+    public const string WeeklySteps = "/wellness-service/stats/weekly/steps/{0}/{1}";
 
     #endregion
 
     #region Heart Rate
 
-    public static string HeartRates(DateOnly date) =>
-        $"/wellness-service/wellness/dailyHeartRate/{date:yyyy-MM-dd}";
+    /// <summary>Heart rate endpoint. Format: {0} = date (yyyy-MM-dd)</summary>
+    public const string DailyHeartRate = "/wellness-service/wellness/dailyHeartRate/{0}";
 
-    public static string RestingHeartRate(DateOnly date) =>
-        $"/userstats-service/wellness/daily/{date:yyyy-MM-dd}?metricId=37";
+    /// <summary>Resting heart rate endpoint. Format: {0} = date (yyyy-MM-dd)</summary>
+    public const string RestingHeartRate = "/userstats-service/wellness/daily/{0}?metricId=37";
 
     #endregion
 
     #region Sleep
 
-    public static string SleepData(DateOnly date) =>
-        $"/wellness-service/wellness/dailySleepData/{date:yyyy-MM-dd}";
+    /// <summary>Sleep data endpoint (use with query params).</summary>
+    public const string DailySleep = "/wellness-service/wellness/dailySleepData";
 
     #endregion
 
     #region Stress
 
-    public static string StressData(DateOnly date) =>
-        $"/wellness-service/wellness/dailyStress/{date:yyyy-MM-dd}";
+    /// <summary>Stress data endpoint. Format: {0} = date (yyyy-MM-dd)</summary>
+    public const string DailyStress = "/wellness-service/wellness/dailyStress/{0}";
 
-    public static string WeeklyStress(DateOnly endDate, int weeks = 1) =>
-        $"/wellness-service/stats/weekly/stress/{endDate:yyyy-MM-dd}/{weeks}";
+    /// <summary>Weekly stress endpoint. Format: {0} = date (yyyy-MM-dd), {1} = weeks</summary>
+    public const string WeeklyStress = "/wellness-service/stats/weekly/stress/{0}/{1}";
 
     #endregion
 
     #region Body Battery
 
-    public static string BodyBattery(DateOnly startDate, DateOnly endDate) =>
-        $"/wellness-service/wellness/bodyBattery?startDate={startDate:yyyy-MM-dd}&endDate={endDate:yyyy-MM-dd}";
+    /// <summary>Body battery daily reports endpoint (use with query params).</summary>
+    public const string BodyBatteryDaily = "/wellness-service/wellness/bodyBattery/reports/daily";
+
+    /// <summary>Body battery events endpoint. Append /{date}</summary>
+    public const string BodyBatteryEvents = "/wellness-service/wellness/bodyBattery/events";
 
     #endregion
 
     #region Respiration & SpO2
 
-    public static string Respiration(DateOnly date) =>
-        $"/wellness-service/wellness/dailyRespiration/{date:yyyy-MM-dd}";
+    /// <summary>Respiration endpoint. Format: {0} = date (yyyy-MM-dd)</summary>
+    public const string Respiration = "/wellness-service/wellness/dailyRespiration/{0}";
 
-    public static string SpO2(DateOnly date) =>
-        $"/wellness-service/wellness/dailyPulseOx/{date:yyyy-MM-dd}";
+    /// <summary>SpO2 endpoint. Format: {0} = date (yyyy-MM-dd)</summary>
+    public const string SpO2 = "/wellness-service/wellness/dailyPulseOx/{0}";
 
     #endregion
 
     #region HRV
 
-    public static string HrvData(DateOnly date) =>
-        $"/hrv-service/hrv/{date:yyyy-MM-dd}";
+    /// <summary>HRV endpoint. Format: {0} = date (yyyy-MM-dd)</summary>
+    public const string HrvData = "/hrv-service/hrv/{0}";
 
     #endregion
 
     #region Activities
 
-    public static string Activities(int start, int limit, string? activityType = null)
-    {
-        var url = $"/activitylist-service/activities/search/activities?start={start}&limit={limit}";
-        if (!string.IsNullOrEmpty(activityType))
-            url += $"&activityType={activityType}";
-        return url;
-    }
+    /// <summary>Activities search endpoint (use with query params).</summary>
+    public const string Activities = "/activitylist-service/activities/search/activities";
 
-    public static string ActivitiesByDate(DateOnly startDate, DateOnly endDate, string? activityType = null)
-    {
-        var url = $"/activitylist-service/activities/search/activities?startDate={startDate:yyyy-MM-dd}&endDate={endDate:yyyy-MM-dd}";
-        if (!string.IsNullOrEmpty(activityType))
-            url += $"&activityType={activityType}";
-        return url;
-    }
+    /// <summary>Activities for date endpoint. Format: {0} = date (yyyy-MM-dd)</summary>
+    public const string ActivitiesForDate = "/activitylist-service/activities/fordate/{0}";
 
-    public static string ActivitiesForDate(DateOnly date) =>
-        $"/activitylist-service/activities/fordate/{date:yyyy-MM-dd}";
+    /// <summary>Single activity endpoint. Format: {0} = activityId</summary>
+    public const string Activity = "/activity-service/activity/{0}";
 
-    public static string Activity(long activityId) =>
-        $"/activity-service/activity/{activityId}";
+    /// <summary>Activity details endpoint. Format: {0} = activityId</summary>
+    public const string ActivityDetails = "/activity-service/activity/{0}/details";
 
-    public static string ActivityDetails(long activityId, int? maxChartSize = null, int? maxPolylineSize = null) =>
-        $"/activity-service/activity/{activityId}/details?maxChartSize={maxChartSize ?? 2000}&maxPolylineSize={maxPolylineSize ?? 4000}";
+    /// <summary>Activity splits endpoint. Format: {0} = activityId</summary>
+    public const string ActivitySplits = "/activity-service/activity/{0}/splits";
 
-    public static string ActivitySplits(long activityId) =>
-        $"/activity-service/activity/{activityId}/splits";
+    /// <summary>Activity weather endpoint. Format: {0} = activityId</summary>
+    public const string ActivityWeather = "/activity-service/activity/{0}/weather";
 
-    public static string ActivityWeather(long activityId) =>
-        $"/activity-service/activity/{activityId}/weather";
+    /// <summary>Activity HR time in zones endpoint. Format: {0} = activityId</summary>
+    public const string ActivityHrTimezones = "/activity-service/activity/{0}/hrTimeInZones";
 
-    public static string ActivityHrTimezones(long activityId) =>
-        $"/activity-service/activity/{activityId}/hrTimeInZones";
-
-    public static string ActivityGear(long activityId) =>
-        $"/activity-service/activity/{activityId}/gear";
+    /// <summary>Activity gear endpoint. Format: {0} = activityId</summary>
+    public const string ActivityGear = "/activity-service/activity/{0}/gear";
 
     public const string ActivityTypes = "/activity-service/activity/activityTypes";
 
@@ -134,33 +124,40 @@ internal static class Endpoints
 
     #region Activity Download/Upload
 
-    public static string DownloadActivity(long activityId, string format) =>
-        $"/download-service/export/{format}/activity/{activityId}";
+    /// <summary>Download activity as FIT. Format: {0} = activityId</summary>
+    public const string ActivityDownloadFit = "/download-service/export/fit/activity/{0}";
 
-    public const string UploadActivity = "/upload-service/upload/.fit";
+    /// <summary>Download activity as TCX. Format: {0} = activityId</summary>
+    public const string ActivityDownloadTcx = "/download-service/export/tcx/activity/{0}";
 
-    public static string DeleteActivity(long activityId) =>
-        $"/activity-service/activity/{activityId}";
+    /// <summary>Download activity as GPX. Format: {0} = activityId</summary>
+    public const string ActivityDownloadGpx = "/download-service/export/gpx/activity/{0}";
+
+    /// <summary>Download activity as KML. Format: {0} = activityId</summary>
+    public const string ActivityDownloadKml = "/download-service/export/kml/activity/{0}";
+
+    /// <summary>Download activity as CSV. Format: {0} = activityId</summary>
+    public const string ActivityDownloadCsv = "/download-service/export/csv/activity/{0}";
+
+    /// <summary>Upload activity endpoint.</summary>
+    public const string ActivityUpload = "/upload-service/upload";
 
     #endregion
 
     #region Body Composition & Weight
 
-    public static string BodyComposition(DateOnly date) =>
-        $"/weight-service/weight/dateRange?startDate={date:yyyy-MM-dd}&endDate={date:yyyy-MM-dd}";
+    /// <summary>Weight date range endpoint (use with query params).</summary>
+    public const string WeightDateRange = "/weight-service/weight/dateRange";
 
-    public static string WeighIns(DateOnly startDate, DateOnly endDate) =>
-        $"/weight-service/weight/dateRange?startDate={startDate:yyyy-MM-dd}&endDate={endDate:yyyy-MM-dd}";
-
-    public static string DailyWeighIns(DateOnly date) =>
-        $"/weight-service/weight/dayview/{date:yyyy-MM-dd}";
+    /// <summary>Daily weigh-ins endpoint. Format: {0} = date (yyyy-MM-dd)</summary>
+    public const string DailyWeighIns = "/weight-service/weight/dayview/{0}";
 
     public const string LatestWeight = "/weight-service/weight/latest";
 
     public const string AddWeighIn = "/weight-service/user-weight";
 
-    public static string DeleteWeighIn(long weighInId) =>
-        $"/weight-service/weight/{weighInId}";
+    /// <summary>Delete weigh-in endpoint. Format: {0} = weighInId</summary>
+    public const string DeleteWeighIn = "/weight-service/weight/{0}";
 
     #endregion
 
@@ -168,8 +165,8 @@ internal static class Endpoints
 
     public const string Devices = "/device-service/deviceregistration/devices";
 
-    public static string DeviceSettings(long deviceId) =>
-        $"/device-service/deviceservice/device-info/settings/{deviceId}";
+    /// <summary>Device settings endpoint. Format: {0} = deviceId</summary>
+    public const string DeviceSettings = "/device-service/deviceservice/device-info/settings/{0}";
 
     public const string DeviceLastUsed = "/device-service/deviceregistration/devices/lastused";
 
@@ -177,24 +174,24 @@ internal static class Endpoints
 
     #region Gear
 
-    public static string Gear(long userProfileNumber) =>
-        $"/gear-service/gear/filterGear?userProfilePK={userProfileNumber}";
+    /// <summary>Gear filter endpoint. Format: {0} = userProfilePK</summary>
+    public const string Gear = "/gear-service/gear/filterGear?userProfilePK={0}";
 
-    public static string GearStats(string gearUuid) =>
-        $"/gear-service/gear/stats/{gearUuid}";
+    /// <summary>Gear stats endpoint. Format: {0} = gearUuid</summary>
+    public const string GearStats = "/gear-service/gear/stats/{0}";
 
-    public static string GearDefaults(long userProfileNumber) =>
-        $"/gear-service/gear/user/{userProfileNumber}/activityType-defaults";
+    /// <summary>Gear defaults endpoint. Format: {0} = userProfileNumber</summary>
+    public const string GearDefaults = "/gear-service/gear/user/{0}/activityType-defaults";
 
     #endregion
 
     #region Workouts
 
-    public static string Workouts(int start, int limit) =>
-        $"/workout-service/workouts?start={start}&limit={limit}";
+    /// <summary>Workouts list endpoint (use with query params).</summary>
+    public const string Workouts = "/workout-service/workouts";
 
-    public static string Workout(long workoutId) =>
-        $"/workout-service/workout/{workoutId}";
+    /// <summary>Single workout endpoint. Format: {0} = workoutId</summary>
+    public const string Workout = "/workout-service/workout/{0}";
 
     public const string ScheduleWorkout = "/workout-service/schedule";
 
@@ -217,18 +214,18 @@ internal static class Endpoints
 
     #region Personal Records
 
-    public static string PersonalRecords(long userProfileNumber) =>
-        $"/personalrecord-service/personalrecord/prs/{userProfileNumber}";
+    /// <summary>Personal records endpoint. Format: {0} = userProfileNumber</summary>
+    public const string PersonalRecords = "/personalrecord-service/personalrecord/prs/{0}";
 
     #endregion
 
     #region Training
 
-    public static string TrainingReadiness(DateOnly date) =>
-        $"/metrics-service/metrics/trainingreadiness/{date:yyyy-MM-dd}";
+    /// <summary>Training readiness endpoint. Format: {0} = date (yyyy-MM-dd)</summary>
+    public const string TrainingReadiness = "/metrics-service/metrics/trainingreadiness/{0}";
 
-    public static string TrainingStatus(DateOnly date) =>
-        $"/metrics-service/metrics/trainingstatus/aggregated/{date:yyyy-MM-dd}";
+    /// <summary>Training status endpoint. Format: {0} = date (yyyy-MM-dd)</summary>
+    public const string TrainingStatus = "/metrics-service/metrics/trainingstatus/aggregated/{0}";
 
     public const string RacePredictions = "/metrics-service/metrics/racepredictions";
 
@@ -238,8 +235,8 @@ internal static class Endpoints
 
     #region Hydration
 
-    public static string Hydration(DateOnly date) =>
-        $"/usersummary-service/usersummary/hydration/daily/{date:yyyy-MM-dd}";
+    /// <summary>Hydration endpoint. Format: {0} = date (yyyy-MM-dd)</summary>
+    public const string Hydration = "/usersummary-service/usersummary/hydration/daily/{0}";
 
     public const string AddHydration = "/usersummary-service/usersummary/hydration/log";
 
@@ -247,22 +244,22 @@ internal static class Endpoints
 
     #region Blood Pressure
 
-    public static string BloodPressure(DateOnly startDate, DateOnly endDate) =>
-        $"/bloodpressure-service/bloodpressure/range/{startDate:yyyy-MM-dd}/{endDate:yyyy-MM-dd}";
+    /// <summary>Blood pressure range endpoint. Format: {0} = startDate, {1} = endDate (yyyy-MM-dd)</summary>
+    public const string BloodPressure = "/bloodpressure-service/bloodpressure/range/{0}/{1}";
 
     #endregion
 
     #region Floors
 
-    public static string Floors(DateOnly date) =>
-        $"/wellness-service/wellness/floorsChartData/daily/{date:yyyy-MM-dd}";
+    /// <summary>Floors chart endpoint. Format: {0} = date (yyyy-MM-dd)</summary>
+    public const string Floors = "/wellness-service/wellness/floorsChartData/daily/{0}";
 
     #endregion
 
     #region Max Metrics
 
-    public static string MaxMetrics(DateOnly date) =>
-        $"/metrics-service/metrics/maxmet/daily/{date:yyyy-MM-dd}";
+    /// <summary>Max metrics endpoint. Format: {0} = date (yyyy-MM-dd)</summary>
+    public const string MaxMetrics = "/metrics-service/metrics/maxmet/daily/{0}";
 
     #endregion
 }

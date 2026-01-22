@@ -141,14 +141,14 @@ public sealed class GarminApiClient : IGarminApiClient
     }
 
     /// <inheritdoc />
-    public async Task<T> PostFileAsync<T>(string endpoint, Stream file, string fileName, CancellationToken cancellationToken = default)
+    public async Task<T> PostFileAsync<T>(string endpoint, Stream file, string fileName, string? contentType = null, CancellationToken cancellationToken = default)
     {
         var request = new HttpRequestMessage(HttpMethod.Post, endpoint);
         AddAuthorizationHeader(request);
 
         var content = new MultipartFormDataContent();
         var streamContent = new StreamContent(file);
-        streamContent.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
+        streamContent.Headers.ContentType = new MediaTypeHeaderValue(contentType ?? "application/octet-stream");
         content.Add(streamContent, "file", fileName);
         request.Content = content;
 
