@@ -290,6 +290,64 @@ public interface IGarminClient : IDisposable, IAsyncDisposable
     Task DeleteActivityAsync(long activityId, CancellationToken cancellationToken = default);
 
     #endregion
+
+    #region Body Composition
+
+    /// <summary>
+    /// Adds a body composition (weight) measurement to Garmin Connect.
+    /// </summary>
+    /// <param name="weight">Weight in kilograms.</param>
+    /// <param name="timestamp">Measurement timestamp (defaults to now).</param>
+    /// <param name="percentFat">Body fat percentage (0-100).</param>
+    /// <param name="percentHydration">Body hydration percentage (0-100).</param>
+    /// <param name="visceralFatMass">Visceral fat mass in kg.</param>
+    /// <param name="boneMass">Bone mass in kg.</param>
+    /// <param name="muscleMass">Muscle mass in kg.</param>
+    /// <param name="basalMet">Basal metabolic rate.</param>
+    /// <param name="activeMet">Active metabolic rate.</param>
+    /// <param name="physiqueRating">Physique rating (1-9).</param>
+    /// <param name="metabolicAge">Metabolic age in years.</param>
+    /// <param name="visceralFatRating">Visceral fat rating.</param>
+    /// <param name="bmi">Body mass index.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>Upload result.</returns>
+    Task<WeightUploadResult> AddBodyCompositionAsync(
+        double weight,
+        DateTime? timestamp = null,
+        double? percentFat = null,
+        double? percentHydration = null,
+        double? visceralFatMass = null,
+        double? boneMass = null,
+        double? muscleMass = null,
+        double? basalMet = null,
+        double? activeMet = null,
+        double? physiqueRating = null,
+        double? metabolicAge = null,
+        double? visceralFatRating = null,
+        double? bmi = null,
+        CancellationToken cancellationToken = default);
+
+    #endregion
+
+    #region Blood Pressure
+
+    /// <summary>
+    /// Adds a blood pressure measurement to Garmin Connect.
+    /// </summary>
+    /// <param name="systolicPressure">Systolic blood pressure in mmHg.</param>
+    /// <param name="diastolicPressure">Diastolic blood pressure in mmHg.</param>
+    /// <param name="timestamp">Measurement timestamp (defaults to now).</param>
+    /// <param name="heartRate">Heart rate in bpm (optional).</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>Upload result.</returns>
+    Task<BloodPressureUploadResult> AddBloodPressureAsync(
+        int systolicPressure,
+        int diastolicPressure,
+        DateTime? timestamp = null,
+        int? heartRate = null,
+        CancellationToken cancellationToken = default);
+
+    #endregion
 }
 
 /// <summary>
