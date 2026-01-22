@@ -13,16 +13,36 @@ namespace GarminConnect.Api;
 /// </summary>
 public sealed class GarminApiClient : IGarminApiClient
 {
+    private const string DefaultUserAgent = "GCM-iOS-5.7.2.1";
+
     private readonly HttpClient _httpClient;
     private readonly JsonSerializerOptions _jsonOptions;
     private readonly ILogger<GarminApiClient>? _logger;
-    private string? _accessToken;
+    private readonly bool _ownsHttpClient;
+
+    private volatile string? _accessToken;
     private bool _disposed;
 
-    public GarminApiClient(HttpClient httpClient, ILogger<GarminApiClient>? logger = null)
+    /// <summary>
+    /// Creates a new instance of GarminApiClient.
+    /// </summary>
+    /// <param name="httpClient">The HttpClient instance to use.</param>
+    /// <param name="ownsHttpClient">
+    /// If true, the HttpClient will be disposed when this client is disposed.
+    /// Set to false when HttpClient is managed by IHttpClientFactory or DI container.
+    /// </param>
+    /// <param name="logger">Optional logger instance.</param>
+    public GarminApiClient(HttpClient httpClient, bool ownsHttpClient = true, ILogger<GarminApiClient>? logger = null)
     {
         _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
+        _ownsHttpClient = ownsHttpClient;
         _logger = logger;
+
+        // Set default User-Agent if not already set
+        if (_httpClient.DefaultRequestHeaders.UserAgent.Count == 0)
+        {
+            _httpClient.DefaultRequestHeaders.UserAgent.ParseAdd(DefaultUserAgent);
+        }
 
         _jsonOptions = new JsonSerializerOptions
         {
@@ -98,26 +118,50 @@ public sealed class GarminApiClient : IGarminApiClient
     /// <inheritdoc />
     public async Task<Stream> GetStreamAsync(string endpoint, CancellationToken cancellationToken = default)
     {
-        using var request = CreateRequest(HttpMethod.Get, endpoint);
-        var response = await SendRequestAsync(request, cancellationToken).ConfigureAwait(false);
-        return await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
+        var request = CreateRequest(HttpMethod.Get, endpoint);
+        HttpResponseMessage? response = null;
+        Stream? innerStream = null;
+
+        try
+        {
+            response = await SendRequestAsync(request, cancellationToken).ConfigureAwait(false);
+            innerStream = await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
+
+            // HttpResponseStream will dispose both response and innerStream
+            return new HttpResponseStream(response, innerStream);
+        }
+        catch
+        {
+            // Clean up on failure
+            innerStream?.Dispose();
+            response?.Dispose();
+            request.Dispose();
+            throw;
+        }
     }
 
     /// <inheritdoc />
     public async Task<T> PostFileAsync<T>(string endpoint, Stream file, string fileName, CancellationToken cancellationToken = default)
     {
-        using var request = new HttpRequestMessage(HttpMethod.Post, endpoint);
+        var request = new HttpRequestMessage(HttpMethod.Post, endpoint);
         AddAuthorizationHeader(request);
 
-        using var content = new MultipartFormDataContent();
-        using var streamContent = new StreamContent(file);
+        var content = new MultipartFormDataContent();
+        var streamContent = new StreamContent(file);
         streamContent.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
         content.Add(streamContent, "file", fileName);
-
         request.Content = content;
 
-        using var response = await SendRequestAsync(request, cancellationToken).ConfigureAwait(false);
-        return await DeserializeResponseAsync<T>(response, cancellationToken).ConfigureAwait(false);
+        try
+        {
+            using var response = await SendRequestAsync(request, cancellationToken).ConfigureAwait(false);
+            return await DeserializeResponseAsync<T>(response, cancellationToken).ConfigureAwait(false);
+        }
+        finally
+        {
+            // Content is disposed with request, but we explicitly dispose to be safe
+            request.Dispose();
+        }
     }
 
     private HttpRequestMessage CreateRequest(HttpMethod method, string endpoint, object? content = null)
@@ -137,9 +181,11 @@ public sealed class GarminApiClient : IGarminApiClient
 
     private void AddAuthorizationHeader(HttpRequestMessage request)
     {
-        if (!string.IsNullOrEmpty(_accessToken))
+        // Read volatile field once for thread-safety
+        var token = _accessToken;
+        if (!string.IsNullOrEmpty(token))
         {
-            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _accessToken);
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
         }
     }
 
@@ -245,14 +291,24 @@ public sealed class GarminApiClient : IGarminApiClient
     public void Dispose()
     {
         if (_disposed) return;
-        _httpClient.Dispose();
+
+        if (_ownsHttpClient)
+        {
+            _httpClient.Dispose();
+        }
+
         _disposed = true;
     }
 
     public ValueTask DisposeAsync()
     {
         if (_disposed) return ValueTask.CompletedTask;
-        _httpClient.Dispose();
+
+        if (_ownsHttpClient)
+        {
+            _httpClient.Dispose();
+        }
+
         _disposed = true;
         return ValueTask.CompletedTask;
     }
