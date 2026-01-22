@@ -38,12 +38,12 @@ net-garminconnect/
 
 ## Фази реалізації
 
-### Фаза 1: Базова інфраструктура
-- [ ] Створити solution та проекти (`dotnet new sln`, `dotnet new classlib`, `dotnet new xunit`)
-- [ ] Налаштувати .csproj (TargetFramework net8.0, Nullable enable)
-- [ ] Створити базові класи виключень
-- [ ] Реалізувати `GarminApiClient` (HttpClient обгортка)
-- [ ] Додати `Endpoints.cs` з URL константами
+### Фаза 1: Базова інфраструктура ✅ ЗАВЕРШЕНО
+- [x] Створити solution та проекти (`dotnet new sln`, `dotnet new classlib`, `dotnet new xunit`)
+- [x] Налаштувати .csproj (TargetFramework net8.0, Nullable enable)
+- [x] Створити базові класи виключень
+- [x] Реалізувати `GarminApiClient` (HttpClient обгортка)
+- [x] Додати `Endpoints.cs` з URL константами
 
 ### Фаза 2: Автентифікація
 - [ ] Дослідити OAuth flow (аналіз Garth Python бібліотеки)
