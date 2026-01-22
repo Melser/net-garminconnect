@@ -45,12 +45,13 @@ net-garminconnect/
 - [x] Реалізувати `GarminApiClient` (HttpClient обгортка)
 - [x] Додати `Endpoints.cs` з URL константами
 
-### Фаза 2: Автентифікація
-- [ ] Дослідити OAuth flow (аналіз Garth Python бібліотеки)
-- [ ] Реалізувати `IGarminAuthenticator` / `GarminAuthenticator`
-- [ ] Додати `IOAuthTokenStore` / `FileTokenStore`
-- [ ] Реалізувати MFA handling (`IMfaHandler`)
-- [ ] Тестування логіну та збереження токенів
+### Фаза 2: Автентифікація ✅ ЗАВЕРШЕНО
+- [x] Дослідити OAuth flow (аналіз Garth Python бібліотеки)
+- [x] Реалізувати `IGarminAuthenticator` / `GarminAuthenticator`
+- [x] Додати `IOAuthTokenStore` / `FileTokenStore`
+- [x] Реалізувати MFA handling (`IMfaHandler`)
+- [x] Тестування логіну та збереження токенів
+- [x] Unit tests (64 тести)
 
 ### Фаза 3: Основні API (Health & Activities) - ПРІОРИТЕТ
 - [ ] Моделі: `DailySummary`, `HeartRateData`, `SleepData`, `Activity`
@@ -139,4 +140,4 @@ net-garminconnect/
 - **~40 моделей** (records для API responses)
 - **~127 методів API** (partial classes)
 - **~15 файлів інфраструктури** (Auth, API, Exceptions)
-- **~50+ unit tests**
+- **~50+ unit tests** (поточний стан: 64 тести)

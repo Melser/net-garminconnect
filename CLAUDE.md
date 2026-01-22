@@ -10,13 +10,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Status
 
-**Поточна фаза:** Фаза 2 - Автентифікація
+**Поточна фаза:** Фаза 3 - Основні API (Health & Activities)
 
 **Завершено:**
 - ✅ Фаза 1: Базова інфраструктура (solution, projects, exceptions, HTTP client, endpoints)
+- ✅ Фаза 2: Автентифікація (OAuth flow, Token Store, MFA, 64 unit tests)
 
-**В процесі:**
-- 🔄 Фаза 2: Автентифікація (OAuth flow, Token Store, MFA)
+**Наступні:**
+- 📋 Фаза 3: Основні API (Health & Activities)
 
 ## Project Structure
 
@@ -28,7 +29,13 @@ net-garminconnect/
 │   │   ├── Endpoints.cs           # URL endpoints для Garmin API
 │   │   ├── IGarminApiClient.cs    # Інтерфейс HTTP клієнта
 │   │   └── GarminApiClient.cs     # Реалізація HTTP клієнта
-│   ├── Auth/                      # (TODO) OAuth, MFA, TokenStore
+│   ├── Auth/
+│   │   ├── IGarminAuthenticator.cs  # Інтерфейс автентифікації
+│   │   ├── GarminAuthenticator.cs   # Реалізація автентифікації
+│   │   ├── GarminSsoClient.cs       # SSO клієнт
+│   │   ├── AuthResult.cs            # Результат автентифікації
+│   │   ├── OAuth/                   # OAuth токени та storage
+│   │   └── Mfa/                     # MFA handlers
 │   ├── Exceptions/
 │   │   ├── GarminConnectException.cs
 │   │   ├── GarminConnectAuthenticationException.cs
@@ -38,6 +45,9 @@ net-garminconnect/
 │   ├── Models/                    # (TODO) DTO records
 │   └── Services/                  # (TODO) GarminClient partial classes
 └── tests/GarminConnect.Tests/
+    ├── Api/                         # Тести HTTP клієнта
+    ├── Auth/                        # Тести автентифікації
+    └── Exceptions/                  # Тести виключень
 ```
 
 ## Common Commands
@@ -73,6 +83,8 @@ dotnet pack -c Release
 
 - `src/GarminConnect/Api/Endpoints.cs` - всі URL endpoints Garmin API
 - `src/GarminConnect/Api/GarminApiClient.cs` - низькорівневий HTTP клієнт
+- `src/GarminConnect/Auth/GarminAuthenticator.cs` - OAuth автентифікація
+- `src/GarminConnect/Auth/OAuth/FileTokenStore.cs` - збереження токенів
 - `src/GarminConnect/Exceptions/` - ієрархія виключень
 
 ## Reference
