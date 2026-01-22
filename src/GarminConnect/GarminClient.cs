@@ -134,6 +134,7 @@ public sealed partial class GarminClient : IGarminClient
 
         await _authenticator.LogoutAsync(cancellationToken).ConfigureAwait(false);
         _apiClient.SetAccessToken(null);
+        ClearUserCache();
     }
 
     #endregion

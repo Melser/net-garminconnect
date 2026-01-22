@@ -9,6 +9,7 @@ public sealed partial class GarminClient
 {
     private const int DefaultActivityLimit = 20;
     private const int MaxActivityLimit = 1000;
+    private const int MaxPaginationIterations = 100; // Safety limit: 100 * 20 = 2000 activities max
 
     #region Activities - List
 
@@ -41,10 +42,14 @@ public sealed partial class GarminClient
 
         var end = endDate ?? DateOnly.FromDateTime(DateTime.Today);
         var activities = new List<Activity>();
+        var seenIds = new HashSet<long>();
         var start = 0;
+        var iterations = 0;
 
-        while (true)
+        while (iterations < MaxPaginationIterations)
         {
+            iterations++;
+
             var url = $"{Endpoints.Activities}?startDate={FormatDate(startDate)}&endDate={FormatDate(end)}&start={start}&limit={DefaultActivityLimit}";
 
             if (!string.IsNullOrEmpty(activityType))
@@ -59,7 +64,15 @@ public sealed partial class GarminClient
                 break;
             }
 
-            activities.AddRange(batch);
+            // Check for duplicates to prevent infinite loops from API issues
+            var newActivities = batch.Where(a => seenIds.Add(a.ActivityId)).ToList();
+            if (newActivities.Count == 0)
+            {
+                // All activities in this batch were duplicates - stop to prevent infinite loop
+                break;
+            }
+
+            activities.AddRange(newActivities);
             start += batch.Count;
 
             // If we got fewer than the limit, we've reached the end

@@ -9,6 +9,16 @@ public sealed partial class GarminClient
     private string? _cachedDisplayName;
     private string? _cachedFullName;
 
+    /// <summary>
+    /// Clears cached user data. Called on logout.
+    /// </summary>
+    private void ClearUserCache()
+    {
+        _cachedUserSettings = null;
+        _cachedDisplayName = null;
+        _cachedFullName = null;
+    }
+
     /// <inheritdoc />
     public async Task<string?> GetDisplayNameAsync(CancellationToken cancellationToken = default)
     {
