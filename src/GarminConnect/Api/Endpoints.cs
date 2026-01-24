@@ -156,8 +156,8 @@ internal static class Endpoints
 
     public const string AddWeighIn = "/weight-service/user-weight";
 
-    /// <summary>Delete weigh-in endpoint. Format: {0} = weighInId</summary>
-    public const string DeleteWeighIn = "/weight-service/weight/{0}";
+    /// <summary>Delete weigh-in endpoint. Format: {0} = date (yyyy-MM-dd), {1} = weight_pk</summary>
+    public const string DeleteWeighIn = "/weight-service/weight/{0}/byversion/{1}";
 
     #endregion
 
@@ -168,20 +168,36 @@ internal static class Endpoints
     /// <summary>Device settings endpoint. Format: {0} = deviceId</summary>
     public const string DeviceSettings = "/device-service/deviceservice/device-info/settings/{0}";
 
-    public const string DeviceLastUsed = "/device-service/deviceregistration/devices/lastused";
+    public const string PrimaryTrainingDevice = "/web-gateway/device-info/primary-training-device";
+
+    /// <summary>Device solar data endpoint. Format: {0} = deviceId, {1} = startDate, {2} = endDate (yyyy-MM-dd)</summary>
+    public const string DeviceSolarData = "/web-gateway/solar/{0}/{1}/{2}";
+
+    public const string DeviceLastUsed = "/device-service/deviceservice/mylastused";
 
     #endregion
 
     #region Gear
 
-    /// <summary>Gear filter endpoint. Format: {0} = userProfilePK</summary>
-    public const string Gear = "/gear-service/gear/filterGear?userProfilePK={0}";
+    /// <summary>Gear filter endpoint (use with query params).</summary>
+    public const string Gear = "/gear-service/gear/filterGear";
+
+    public const string GearBase = "/gear-service/gear";
 
     /// <summary>Gear stats endpoint. Format: {0} = gearUuid</summary>
     public const string GearStats = "/gear-service/gear/stats/{0}";
 
     /// <summary>Gear defaults endpoint. Format: {0} = userProfileNumber</summary>
-    public const string GearDefaults = "/gear-service/gear/user/{0}/activityType-defaults";
+    public const string GearDefaults = "/gear-service/gear/user/{0}/activityTypes";
+
+    /// <summary>Set/Unset gear default endpoint. Format: {0} = gearUuid, {1} = activityType</summary>
+    public const string SetGearDefault = "/gear-service/gear/{0}/activityType/{1}";
+
+    /// <summary>Gear activities endpoint. Format: {0} = gearUuid</summary>
+    public const string GearActivities = "/activitylist-service/activities/{0}/gear";
+
+    /// <summary>Add gear to activity endpoint. Format: {0} = gearUuid, {1} = activityId</summary>
+    public const string AddGearToActivity = "/gear-service/gear/link/{0}/activity/{1}";
 
     #endregion
 
@@ -193,7 +209,16 @@ internal static class Endpoints
     /// <summary>Single workout endpoint. Format: {0} = workoutId</summary>
     public const string Workout = "/workout-service/workout/{0}";
 
+    /// <summary>Download workout as FIT. Format: {0} = workoutId</summary>
+    public const string WorkoutDownloadFit = "/workout-service/workout/FIT/{0}";
+
+    /// <summary>Upload workout endpoint.</summary>
+    public const string WorkoutUpload = "/workout-service/workout";
+
     public const string ScheduleWorkout = "/workout-service/schedule";
+
+    /// <summary>Scheduled workout endpoint. Format: {0} = scheduledWorkoutId</summary>
+    public const string ScheduledWorkout = "/workout-service/schedule/{0}";
 
     #endregion
 
@@ -201,7 +226,10 @@ internal static class Endpoints
 
     public const string EarnedBadges = "/badge-service/badge/earned";
     public const string AvailableBadges = "/badge-service/badge/available";
+    public const string InProgressBadges = "/badge-service/badge/inProgress";
     public const string BadgeChallenges = "/badgechallenge-service/badgeChallenge/available";
+    public const string AvailableBadgeChallenges = "/badgechallenge-service/badgeChallenge/available";
+    public const string NonCompletedBadgeChallenges = "/badgechallenge-service/badgeChallenge/nonCompleted";
     public const string AdhocChallenges = "/adhocchallenge-service/adHocChallenge/historical";
 
     #endregion
@@ -230,6 +258,12 @@ internal static class Endpoints
     public const string RacePredictions = "/metrics-service/metrics/racepredictions";
 
     public const string TrainingPlans = "/trainingplan-service/trainingplan/all";
+
+    /// <summary>Training plan by ID endpoint. Format: {0} = planId</summary>
+    public const string TrainingPlanById = "/trainingplan-service/trainingplan/{0}";
+
+    /// <summary>Adaptive training plan by ID endpoint. Format: {0} = planId</summary>
+    public const string AdaptiveTrainingPlanById = "/trainingplan-service/trainingplan/adaptive/{0}";
 
     #endregion
 

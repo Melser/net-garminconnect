@@ -1,3 +1,4 @@
+using System.Text.Json;
 using GarminConnect.Api;
 using GarminConnect.Fit;
 
@@ -5,7 +6,69 @@ namespace GarminConnect;
 
 public sealed partial class GarminClient
 {
-    #region Body Composition
+    #region Body Composition - Read
+
+    /// <summary>
+    /// Gets body composition data for a date range.
+    /// </summary>
+    public async Task<JsonElement> GetBodyCompositionAsync(
+        DateOnly startDate,
+        DateOnly? endDate = null,
+        CancellationToken cancellationToken = default)
+    {
+        ThrowIfDisposed();
+        EnsureAuthenticated();
+
+        var end = endDate ?? startDate;
+        if (startDate > end)
+        {
+            throw new ArgumentException("startDate cannot be after endDate", nameof(startDate));
+        }
+
+        var url = $"{Endpoints.WeightDateRange}?startDate={startDate:yyyy-MM-dd}&endDate={end:yyyy-MM-dd}";
+
+        return await _apiClient.GetAsync<JsonElement>(url, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Gets daily weigh-ins for a specific date.
+    /// </summary>
+    public async Task<JsonElement> GetDailyWeighInsAsync(
+        DateOnly date,
+        CancellationToken cancellationToken = default)
+    {
+        ThrowIfDisposed();
+        EnsureAuthenticated();
+
+        var url = $"{string.Format(Endpoints.DailyWeighIns, date.ToString("yyyy-MM-dd"))}?includeAll=true";
+
+        return await _apiClient.GetAsync<JsonElement>(url, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Deletes a specific weigh-in entry.
+    /// </summary>
+    public async Task DeleteWeighInAsync(
+        string weightPk,
+        DateOnly date,
+        CancellationToken cancellationToken = default)
+    {
+        ThrowIfDisposed();
+        EnsureAuthenticated();
+
+        ArgumentException.ThrowIfNullOrWhiteSpace(weightPk, nameof(weightPk));
+
+        var url = string.Format(
+            Endpoints.DeleteWeighIn,
+            date.ToString("yyyy-MM-dd"),
+            weightPk);
+
+        await _apiClient.DeleteAsync(url, cancellationToken).ConfigureAwait(false);
+    }
+
+    #endregion
+
+    #region Body Composition - Write
 
     /// <summary>
     /// Adds a body composition (weight) measurement to Garmin Connect.

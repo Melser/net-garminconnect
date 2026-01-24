@@ -69,13 +69,14 @@ net-garminconnect/
 - [x] Інтеграція з GarminClient: `AddBodyCompositionAsync`, `AddBloodPressureAsync`
 - [x] Unit tests (21 новий тест, 129 всього)
 
-### Фаза 5: Розширені API (пізніше, за потреби)
-- [ ] Body Composition & Weight (8 методів)
-- [ ] Devices (7 методів)
-- [ ] Gear (8 методів)
-- [ ] Workouts (10+ методів)
-- [ ] Goals & Badges (15 методів)
-- [ ] Training Plans (3 методи)
+### Фаза 5: Розширені API ✅ ЗАВЕРШЕНО
+- [x] Body Composition & Weight - GetBodyComposition, GetDailyWeighIns, DeleteWeighIn
+- [x] Devices (6 методів) - GetDevices, GetDeviceSettings, GetPrimaryTrainingDevice, GetDeviceSolarData, GetDeviceLastUsed, GetDeviceAlarms
+- [x] Gear (7 методів) - GetGear, GetGearStats, GetGearDefaults, SetGearDefault, GetGearActivities, AddGearToActivity
+- [x] Workouts (6 методів) - GetWorkouts, GetWorkoutById, DownloadWorkout, UploadWorkout, GetScheduledWorkoutById
+- [x] Badges (6 методів) - GetEarnedBadges, GetAvailableBadges, GetInProgressBadges, GetBadgeChallenges, GetAvailable/NonCompletedBadgeChallenges
+- [x] Goals (1 метод) - GetGoals
+- [x] Training Plans (3 методи) - GetTrainingPlans, GetTrainingPlanById, GetAdaptiveTrainingPlanById
 
 ### Фаза 6: DI та Resilience
 - [ ] `ServiceCollectionExtensions` для DI
@@ -152,8 +153,8 @@ net-garminconnect/
 
 | Метрика | Значення |
 |---------|----------|
-| Фази завершено | 4 з 7 |
+| Фази завершено | 5 з 7 |
 | Тестів | 129 |
-| Методів API | ~32 реалізовано |
+| Методів API | ~62 реалізовано |
 
-**Наступний крок:** Фаза 5 - Розширені API (за потреби) або Фаза 6 - DI та Resilience
+**Наступний крок:** Фаза 6 - DI та Resilience або Фаза 7 - Тестування та документація

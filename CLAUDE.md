@@ -10,14 +10,20 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Status
 
-**Поточна фаза:** Фаза 3 - Основні API (Health & Activities)
+**Поточна фаза:** Фаза 6 - DI та Resilience
 
 **Завершено:**
 - ✅ Фаза 1: Базова інфраструктура (solution, projects, exceptions, HTTP client, endpoints)
-- ✅ Фаза 2: Автентифікація (OAuth flow, Token Store, MFA, 64 unit tests)
+- ✅ Фаза 2: Автентифікація (OAuth flow, Token Store, MFA)
+- ✅ Фаза 3: Основні API (Health & Activities)
+- ✅ Фаза 4: FIT протокол (Weight, Blood Pressure)
+- ✅ Фаза 5: Розширені API (Body Composition, Devices, Gear, Workouts, Badges, Goals, Training Plans)
 
 **Наступні:**
-- 📋 Фаза 3: Основні API (Health & Activities)
+- 📋 Фаза 6: DI та Resilience
+- 📋 Фаза 7: Тестування та документація
+
+**Тести:** 129 unit tests (всі проходять)
 
 ## Project Structure
 
@@ -36,18 +42,22 @@ net-garminconnect/
 │   │   ├── AuthResult.cs            # Результат автентифікації
 │   │   ├── OAuth/                   # OAuth токени та storage
 │   │   └── Mfa/                     # MFA handlers
-│   ├── Exceptions/
-│   │   ├── GarminConnectException.cs
-│   │   ├── GarminConnectAuthenticationException.cs
-│   │   ├── GarminConnectConnectionException.cs
-│   │   ├── GarminConnectTooManyRequestsException.cs
-│   │   └── GarminConnectInvalidFileFormatException.cs
-│   ├── Models/                    # (TODO) DTO records
-│   └── Services/                  # (TODO) GarminClient partial classes
-└── tests/GarminConnect.Tests/
-    ├── Api/                         # Тести HTTP клієнта
-    ├── Auth/                        # Тести автентифікації
-    └── Exceptions/                  # Тести виключень
+│   ├── Exceptions/                  # Ієрархія виключень
+│   ├── Fit/                         # FIT протокол кодування
+│   ├── Models/                      # DTO records
+│   ├── IGarminClient.cs             # Головний інтерфейс
+│   ├── GarminClient.cs              # Головний клієнт
+│   ├── GarminClient.Activity.cs     # Activities API
+│   ├── GarminClient.Health.cs       # Health API
+│   ├── GarminClient.User.cs         # User API
+│   ├── GarminClient.BodyComposition.cs  # Body Composition API
+│   ├── GarminClient.Devices.cs      # Devices API
+│   ├── GarminClient.Gear.cs         # Gear API
+│   ├── GarminClient.Workouts.cs     # Workouts API
+│   ├── GarminClient.Badges.cs       # Badges API
+│   ├── GarminClient.Goals.cs        # Goals API
+│   └── GarminClient.TrainingPlans.cs # Training Plans API
+└── tests/GarminConnect.Tests/       # Unit tests
 ```
 
 ## Common Commands
