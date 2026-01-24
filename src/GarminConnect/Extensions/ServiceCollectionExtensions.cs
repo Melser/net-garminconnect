@@ -49,7 +49,12 @@ public static class ServiceCollectionExtensions
                 client.Timeout = options.Timeout;
                 client.DefaultRequestHeaders.UserAgent.ParseAdd(options.UserAgent);
             })
-            .AddStandardResilienceHandler(ConfigureResilience);
+            .AddStandardResilienceHandler()
+            .Configure((options, serviceProvider) =>
+            {
+                var clientOptions = serviceProvider.GetRequiredService<IOptions<GarminClientOptions>>().Value;
+                ConfigureResilience(options, clientOptions);
+            });
 
         // Register token store (optional, based on configuration)
         services.AddSingleton<IOAuthTokenStore>(sp =>
@@ -130,11 +135,11 @@ public static class ServiceCollectionExtensions
         return services.AddGarminConnect(configureOptions);
     }
 
-    private static void ConfigureResilience(HttpStandardResilienceOptions options)
+    private static void ConfigureResilience(HttpStandardResilienceOptions options, GarminClientOptions clientOptions)
     {
-        // Configure retry policy
-        options.Retry.MaxRetryAttempts = 3;
-        options.Retry.Delay = TimeSpan.FromSeconds(1);
+        // Configure retry policy using client options
+        options.Retry.MaxRetryAttempts = clientOptions.MaxRetryAttempts;
+        options.Retry.Delay = clientOptions.RetryDelay;
         options.Retry.BackoffType = DelayBackoffType.Exponential;
         options.Retry.UseJitter = true;
         options.Retry.ShouldHandle = args => ValueTask.FromResult(ShouldRetry(args.Outcome));
@@ -147,11 +152,12 @@ public static class ServiceCollectionExtensions
         options.CircuitBreaker.BreakDuration = TimeSpan.FromSeconds(30);
         options.CircuitBreaker.ShouldHandle = args => ValueTask.FromResult(ShouldBreak(args.Outcome));
 
-        // Configure timeout for individual attempts
-        options.AttemptTimeout.Timeout = TimeSpan.FromSeconds(30);
+        // Configure timeout for individual attempts using client options
+        options.AttemptTimeout.Timeout = clientOptions.Timeout;
 
-        // Configure total request timeout
-        options.TotalRequestTimeout.Timeout = TimeSpan.FromMinutes(2);
+        // Configure total request timeout (should be enough for all retries)
+        var totalTimeout = TimeSpan.FromTicks(clientOptions.Timeout.Ticks * (clientOptions.MaxRetryAttempts + 1) * 2);
+        options.TotalRequestTimeout.Timeout = totalTimeout;
     }
 
     private static bool ShouldRetry(Outcome<HttpResponseMessage> outcome)

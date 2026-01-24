@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Microsoft.Extensions.Logging;
 
 namespace GarminConnect.Auth.OAuth;
 
@@ -6,7 +7,7 @@ namespace GarminConnect.Auth.OAuth;
 /// File-based token storage implementation.
 /// Stores tokens in JSON files in the specified directory.
 /// </summary>
-public sealed class FileTokenStore : IOAuthTokenStore
+public sealed class FileTokenStore : IOAuthTokenStore, IDisposable
 {
     private const string TokenFileName = "tokens.json";
     private const string DefaultDirectoryName = ".garminconnect";
@@ -18,12 +19,14 @@ public sealed class FileTokenStore : IOAuthTokenStore
     };
 
     private readonly string _tokenFilePath;
-    private readonly object _fileLock = new();
+    private readonly SemaphoreSlim _lock = new(1, 1);
+    private readonly ILogger<FileTokenStore>? _logger;
+    private bool _disposed;
 
     /// <summary>
     /// Creates a new FileTokenStore with default location (~/.garminconnect/tokens.json).
     /// </summary>
-    public FileTokenStore() : this(null)
+    public FileTokenStore() : this(null, null)
     {
     }
 
@@ -36,19 +39,24 @@ public sealed class FileTokenStore : IOAuthTokenStore
     /// - directory path: stores tokens.json in that directory
     /// - file path: stores tokens in that file
     /// </param>
-    public FileTokenStore(string? path)
+    /// <param name="logger">Optional logger for error reporting.</param>
+    public FileTokenStore(string? path, ILogger<FileTokenStore>? logger = null)
     {
         _tokenFilePath = ResolvePath(path);
+        _logger = logger;
     }
 
     /// <inheritdoc />
     public async Task<GarminConnectTokens?> LoadAsync(CancellationToken cancellationToken = default)
     {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+
         if (!File.Exists(_tokenFilePath))
         {
             return null;
         }
 
+        await _lock.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
             var json = await File.ReadAllTextAsync(_tokenFilePath, cancellationToken).ConfigureAwait(false);
@@ -60,21 +68,26 @@ public sealed class FileTokenStore : IOAuthTokenStore
 
             return JsonSerializer.Deserialize<GarminConnectTokens>(json, JsonOptions);
         }
-        catch (JsonException)
+        catch (JsonException ex)
         {
-            // Invalid JSON - treat as no tokens
+            _logger?.LogWarning(ex, "Failed to deserialize stored tokens from {FilePath}. Token file may be corrupted", _tokenFilePath);
             return null;
         }
-        catch (IOException)
+        catch (IOException ex)
         {
-            // File access error - treat as no tokens
+            _logger?.LogWarning(ex, "Failed to read token file from {FilePath}. Check file permissions and disk access", _tokenFilePath);
             return null;
+        }
+        finally
+        {
+            _lock.Release();
         }
     }
 
     /// <inheritdoc />
     public async Task SaveAsync(GarminConnectTokens tokens, CancellationToken cancellationToken = default)
     {
+        ObjectDisposedException.ThrowIf(_disposed, this);
         ArgumentNullException.ThrowIfNull(tokens);
 
         var directory = Path.GetDirectoryName(_tokenFilePath);
@@ -86,29 +99,40 @@ public sealed class FileTokenStore : IOAuthTokenStore
         var tokensWithTimestamp = tokens with { UpdatedAt = DateTimeOffset.UtcNow };
         var json = JsonSerializer.Serialize(tokensWithTimestamp, JsonOptions);
 
-        // Use lock to prevent concurrent writes
-        lock (_fileLock)
+        await _lock.WaitAsync(cancellationToken).ConfigureAwait(false);
+        try
         {
-            File.WriteAllText(_tokenFilePath, json);
+            await File.WriteAllTextAsync(_tokenFilePath, json, cancellationToken).ConfigureAwait(false);
         }
-
-        await Task.CompletedTask;
+        finally
+        {
+            _lock.Release();
+        }
     }
 
     /// <inheritdoc />
-    public Task ClearAsync(CancellationToken cancellationToken = default)
+    public async Task ClearAsync(CancellationToken cancellationToken = default)
     {
-        if (File.Exists(_tokenFilePath))
-        {
-            File.Delete(_tokenFilePath);
-        }
+        ObjectDisposedException.ThrowIf(_disposed, this);
 
-        return Task.CompletedTask;
+        await _lock.WaitAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            if (File.Exists(_tokenFilePath))
+            {
+                File.Delete(_tokenFilePath);
+            }
+        }
+        finally
+        {
+            _lock.Release();
+        }
     }
 
     /// <inheritdoc />
     public Task<bool> ExistsAsync(CancellationToken cancellationToken = default)
     {
+        ObjectDisposedException.ThrowIf(_disposed, this);
         return Task.FromResult(File.Exists(_tokenFilePath));
     }
 
@@ -116,6 +140,14 @@ public sealed class FileTokenStore : IOAuthTokenStore
     /// Gets the resolved token file path.
     /// </summary>
     public string TokenFilePath => _tokenFilePath;
+
+    /// <inheritdoc />
+    public void Dispose()
+    {
+        if (_disposed) return;
+        _lock.Dispose();
+        _disposed = true;
+    }
 
     private static string ResolvePath(string? path)
     {

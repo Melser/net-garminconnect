@@ -186,9 +186,19 @@ public sealed class GarminAuthenticator : IGarminAuthenticator, IDisposable
             _logger?.LogInformation("Session restored from stored tokens");
             return true;
         }
-        catch (Exception ex)
+        catch (GarminConnectException ex)
         {
-            _logger?.LogWarning(ex, "Failed to resume session from stored tokens");
+            _logger?.LogWarning(ex, "Failed to resume session: {Message}", ex.Message);
+            return false;
+        }
+        catch (IOException ex)
+        {
+            _logger?.LogWarning(ex, "Failed to load stored tokens due to file access error");
+            return false;
+        }
+        catch (System.Text.Json.JsonException ex)
+        {
+            _logger?.LogWarning(ex, "Failed to deserialize stored tokens");
             return false;
         }
     }
@@ -219,9 +229,24 @@ public sealed class GarminAuthenticator : IGarminAuthenticator, IDisposable
             _logger?.LogInformation("Token refresh successful");
             return true;
         }
-        catch (Exception ex)
+        catch (GarminConnectAuthenticationException ex)
         {
-            _logger?.LogWarning(ex, "Failed to refresh token");
+            _logger?.LogWarning(ex, "Token refresh failed due to authentication error");
+            return false;
+        }
+        catch (GarminConnectTooManyRequestsException ex)
+        {
+            _logger?.LogWarning(ex, "Token refresh rate limited. Retry after: {RetryAfter}", ex.RetryAfter);
+            return false;
+        }
+        catch (GarminConnectConnectionException ex)
+        {
+            _logger?.LogWarning(ex, "Token refresh failed due to connection error");
+            return false;
+        }
+        catch (HttpRequestException ex)
+        {
+            _logger?.LogWarning(ex, "Token refresh failed due to network error");
             return false;
         }
     }

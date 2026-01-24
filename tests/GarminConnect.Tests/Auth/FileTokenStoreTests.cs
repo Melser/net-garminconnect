@@ -1,5 +1,7 @@
 using FluentAssertions;
 using GarminConnect.Auth.OAuth;
+using Microsoft.Extensions.Logging;
+using Moq;
 
 namespace GarminConnect.Tests.Auth;
 
@@ -17,6 +19,7 @@ public class FileTokenStoreTests : IDisposable
 
     public void Dispose()
     {
+        _store.Dispose();
         if (Directory.Exists(_testDirectory))
         {
             Directory.Delete(_testDirectory, recursive: true);
@@ -171,10 +174,108 @@ public class FileTokenStoreTests : IDisposable
     public void Constructor_WithNullPath_UsesDefaultLocation()
     {
         // Arrange
-        var store = new FileTokenStore(null);
+        using var store = new FileTokenStore(null);
 
         // Assert
         store.TokenFilePath.Should().Contain(".garminconnect");
         store.TokenFilePath.Should().EndWith("tokens.json");
+    }
+
+    [Fact]
+    public async Task LoadAsync_ThrowsObjectDisposedException_AfterDispose()
+    {
+        // Arrange
+        var store = new FileTokenStore(_testDirectory);
+        store.Dispose();
+
+        // Act & Assert
+        await Assert.ThrowsAsync<ObjectDisposedException>(() => store.LoadAsync());
+    }
+
+    [Fact]
+    public async Task SaveAsync_ThrowsObjectDisposedException_AfterDispose()
+    {
+        // Arrange
+        var store = new FileTokenStore(_testDirectory);
+        store.Dispose();
+
+        // Act & Assert
+        await Assert.ThrowsAsync<ObjectDisposedException>(() => store.SaveAsync(CreateTestTokens()));
+    }
+
+    [Fact]
+    public async Task ClearAsync_ThrowsObjectDisposedException_AfterDispose()
+    {
+        // Arrange
+        var store = new FileTokenStore(_testDirectory);
+        store.Dispose();
+
+        // Act & Assert
+        await Assert.ThrowsAsync<ObjectDisposedException>(() => store.ClearAsync());
+    }
+
+    [Fact]
+    public async Task ExistsAsync_ThrowsObjectDisposedException_AfterDispose()
+    {
+        // Arrange
+        var store = new FileTokenStore(_testDirectory);
+        store.Dispose();
+
+        // Act & Assert
+        await Assert.ThrowsAsync<ObjectDisposedException>(async () => await store.ExistsAsync());
+    }
+
+    [Fact]
+    public async Task LoadAsync_LogsWarning_ForInvalidJson()
+    {
+        // Arrange
+        var mockLogger = new Mock<ILogger<FileTokenStore>>();
+        using var store = new FileTokenStore(_testDirectory, mockLogger.Object);
+        await File.WriteAllTextAsync(store.TokenFilePath, "not valid json");
+
+        // Act
+        var result = await store.LoadAsync();
+
+        // Assert
+        result.Should().BeNull();
+        mockLogger.Verify(
+            x => x.Log(
+                LogLevel.Warning,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((o, t) => o.ToString()!.Contains("deserialize")),
+                It.IsAny<Exception>(),
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task ConcurrentSaveAndLoad_IsThreadSafe()
+    {
+        // Arrange
+        var tasks = new List<Task>();
+
+        // Act - run multiple save/load operations concurrently
+        for (int i = 0; i < 10; i++)
+        {
+            tasks.Add(Task.Run(async () =>
+            {
+                await _store.SaveAsync(CreateTestTokens());
+                await _store.LoadAsync();
+            }));
+        }
+
+        // Assert - should complete without exceptions
+        await Task.WhenAll(tasks);
+    }
+
+    [Fact]
+    public async Task CancellationToken_IsPropagated()
+    {
+        // Arrange
+        using var cts = new CancellationTokenSource();
+        cts.Cancel();
+
+        // Act & Assert - TaskCanceledException inherits from OperationCanceledException
+        await Assert.ThrowsAsync<TaskCanceledException>(() => _store.SaveAsync(CreateTestTokens(), cts.Token));
     }
 }
