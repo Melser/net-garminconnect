@@ -10,7 +10,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Status
 
-**Поточна фаза:** Фаза 6 - DI та Resilience
+**Поточна фаза:** Фаза 7 - Тестування та документація
 
 **Завершено:**
 - ✅ Фаза 1: Базова інфраструктура (solution, projects, exceptions, HTTP client, endpoints)
@@ -18,12 +18,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - ✅ Фаза 3: Основні API (Health & Activities)
 - ✅ Фаза 4: FIT протокол (Weight, Blood Pressure)
 - ✅ Фаза 5: Розширені API (Body Composition, Devices, Gear, Workouts, Badges, Goals, Training Plans)
+- ✅ Фаза 6: DI та Resilience (ServiceCollectionExtensions, Retry/Circuit Breaker policies)
 
 **Наступні:**
-- 📋 Фаза 6: DI та Resilience
 - 📋 Фаза 7: Тестування та документація
 
-**Тести:** 129 unit tests (всі проходять)
+**Тести:** 144 unit tests (всі проходять)
 
 ## Project Structure
 
@@ -43,8 +43,11 @@ net-garminconnect/
 │   │   ├── OAuth/                   # OAuth токени та storage
 │   │   └── Mfa/                     # MFA handlers
 │   ├── Exceptions/                  # Ієрархія виключень
+│   ├── Extensions/
+│   │   └── ServiceCollectionExtensions.cs  # DI extensions
 │   ├── Fit/                         # FIT протокол кодування
 │   ├── Models/                      # DTO records
+│   ├── GarminClientOptions.cs       # Конфігурація клієнта
 │   ├── IGarminClient.cs             # Головний інтерфейс
 │   ├── GarminClient.cs              # Головний клієнт
 │   ├── GarminClient.Activity.cs     # Activities API
@@ -95,6 +98,8 @@ dotnet pack -c Release
 - `src/GarminConnect/Api/GarminApiClient.cs` - низькорівневий HTTP клієнт
 - `src/GarminConnect/Auth/GarminAuthenticator.cs` - OAuth автентифікація
 - `src/GarminConnect/Auth/OAuth/FileTokenStore.cs` - збереження токенів
+- `src/GarminConnect/Extensions/ServiceCollectionExtensions.cs` - DI extensions
+- `src/GarminConnect/GarminClientOptions.cs` - конфігурація клієнта
 - `src/GarminConnect/Exceptions/` - ієрархія виключень
 
 ## Reference

@@ -78,10 +78,19 @@ net-garminconnect/
 - [x] Goals (1 метод) - GetGoals
 - [x] Training Plans (3 методи) - GetTrainingPlans, GetTrainingPlanById, GetAdaptiveTrainingPlanById
 
-### Фаза 6: DI та Resilience
-- [ ] `ServiceCollectionExtensions` для DI
-- [ ] Retry policies (Polly/Microsoft.Extensions.Http.Resilience)
-- [ ] Logging integration
+### Фаза 6: DI та Resilience ✅ ЗАВЕРШЕНО
+- [x] `GarminClientOptions.cs` - конфігурація клієнта
+- [x] `ServiceCollectionExtensions` для DI з методами:
+  - `AddGarminConnect()` - базова реєстрація
+  - `AddGarminConnect<TMfaHandler>()` - з кастомним MFA handler
+  - `AddGarminConnect(Func<...> mfaCallback)` - з callback-based MFA
+- [x] Retry policies (Microsoft.Extensions.Http.Resilience):
+  - Exponential backoff з jitter
+  - Retry на 429 та 5xx помилки
+- [x] Circuit Breaker policy
+- [x] Timeout policies (attempt + total)
+- [x] Logging integration
+- [x] Unit tests (15 нових тестів, 144 всього)
 
 ### Фаза 7: Тестування та документація
 - [ ] Unit tests (>80% coverage)
@@ -130,13 +139,30 @@ net-garminconnect/
 
 1. **Build:** `dotnet build` - має компілюватися без помилок
 2. **Tests:** `dotnet test` - всі тести мають проходити
-3. **Manual test:**
+3. **Manual test (direct):**
    ```csharp
-   var client = new GarminClient("email", "password");
+   var client = new GarminClient();
    await client.LoginAsync("email", "password");
    var summary = await client.GetDailySummaryAsync(DateOnly.FromDateTime(DateTime.Today));
    ```
-4. **Pack:** `dotnet pack -c Release` - має створювати NuGet пакет
+4. **Manual test (DI):**
+   ```csharp
+   services.AddGarminConnect(options =>
+   {
+       options.TokenStorePath = "garmin_tokens.json";
+       options.MaxRetryAttempts = 5;
+   });
+
+   // In your service:
+   public class MyService(IGarminClient garminClient)
+   {
+       public async Task DoWork()
+       {
+           var summary = await garminClient.GetDailySummaryAsync(DateOnly.FromDateTime(DateTime.Today));
+       }
+   }
+   ```
+5. **Pack:** `dotnet pack -c Release` - має створювати NuGet пакет
 
 ---
 
@@ -144,8 +170,8 @@ net-garminconnect/
 
 - **~40 моделей** (records для API responses)
 - **~127 методів API** (partial classes)
-- **~15 файлів інфраструктури** (Auth, API, Exceptions)
-- **108 unit tests** (всі проходять)
+- **~15 файлів інфраструктури** (Auth, API, Exceptions, Extensions)
+- **144 unit tests** (всі проходять)
 
 ---
 
@@ -153,8 +179,8 @@ net-garminconnect/
 
 | Метрика | Значення |
 |---------|----------|
-| Фази завершено | 5 з 7 |
-| Тестів | 129 |
+| Фази завершено | 6 з 7 |
+| Тестів | 144 |
 | Методів API | ~62 реалізовано |
 
-**Наступний крок:** Фаза 6 - DI та Resilience або Фаза 7 - Тестування та документація
+**Наступний крок:** Фаза 7 - Тестування та документація
