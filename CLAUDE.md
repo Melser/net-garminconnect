@@ -23,7 +23,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 **Наступні:**
 - 📋 Фаза 7: Тестування та документація
 
-**Тести:** 144 unit tests (всі проходять)
+**Тести:** 190 unit tests (всі проходять), 44% line coverage
 
 ## Project Structure
 
@@ -101,6 +101,11 @@ dotnet pack -c Release
 - `src/GarminConnect/Extensions/ServiceCollectionExtensions.cs` - DI extensions
 - `src/GarminConnect/GarminClientOptions.cs` - конфігурація клієнта
 - `src/GarminConnect/Exceptions/` - ієрархія виключень
+
+## Gotchas
+
+- `CircuitBreaker.SamplingDuration` must be >= 2x `AttemptTimeout.Timeout` (validation error otherwise)
+- `IOAuthTokenStore` interface has 4 methods: `LoadAsync`, `SaveAsync`, `ClearAsync`, `ExistsAsync`
 
 ## Reference
 
