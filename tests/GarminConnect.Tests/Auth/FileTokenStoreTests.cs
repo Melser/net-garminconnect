@@ -278,4 +278,47 @@ public class FileTokenStoreTests : IDisposable
         // Act & Assert - TaskCanceledException inherits from OperationCanceledException
         await Assert.ThrowsAsync<TaskCanceledException>(() => _store.SaveAsync(CreateTestTokens(), cts.Token));
     }
+
+    [Fact]
+    public async Task SaveAsync_ThrowsGarminConnectException_OnInvalidPath()
+    {
+        // Arrange - use an invalid path that will cause IOException
+        var invalidPath = Path.Combine(_testDirectory, new string('x', 300), "tokens.json");
+        using var store = new FileTokenStore(invalidPath);
+
+        // Act & Assert
+        var ex = await Assert.ThrowsAsync<GarminConnect.Exceptions.GarminConnectException>(
+            () => store.SaveAsync(CreateTestTokens()));
+
+        ex.InnerException.Should().BeOfType<IOException>();
+    }
+
+    [Fact]
+    public async Task SaveAsync_LogsError_OnFailure()
+    {
+        // Arrange
+        var mockLogger = new Mock<ILogger<FileTokenStore>>();
+        var invalidPath = Path.Combine(_testDirectory, new string('x', 300), "tokens.json");
+        using var store = new FileTokenStore(invalidPath, mockLogger.Object);
+
+        // Act
+        try
+        {
+            await store.SaveAsync(CreateTestTokens());
+        }
+        catch (GarminConnect.Exceptions.GarminConnectException)
+        {
+            // Expected
+        }
+
+        // Assert - verify error was logged
+        mockLogger.Verify(
+            x => x.Log(
+                LogLevel.Error,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((o, t) => o.ToString()!.Contains("Failed to save tokens")),
+                It.IsAny<Exception>(),
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Once);
+    }
 }

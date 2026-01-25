@@ -144,16 +144,19 @@ public static class ServiceCollectionExtensions
         options.Retry.UseJitter = true;
         options.Retry.ShouldHandle = args => ValueTask.FromResult(ShouldRetry(args.Outcome));
 
+        // Configure timeout for individual attempts using client options
+        options.AttemptTimeout.Timeout = clientOptions.Timeout;
+
         // Configure circuit breaker
-        // Note: SamplingDuration must be at least 2x AttemptTimeout
-        options.CircuitBreaker.SamplingDuration = TimeSpan.FromSeconds(60);
+        // SamplingDuration must be at least 2x AttemptTimeout (Polly validation requirement)
+        var samplingDuration = TimeSpan.FromTicks(Math.Max(
+            clientOptions.Timeout.Ticks * 2,
+            TimeSpan.FromSeconds(60).Ticks));
+        options.CircuitBreaker.SamplingDuration = samplingDuration;
         options.CircuitBreaker.FailureRatio = 0.5;
         options.CircuitBreaker.MinimumThroughput = 5;
         options.CircuitBreaker.BreakDuration = TimeSpan.FromSeconds(30);
         options.CircuitBreaker.ShouldHandle = args => ValueTask.FromResult(ShouldBreak(args.Outcome));
-
-        // Configure timeout for individual attempts using client options
-        options.AttemptTimeout.Timeout = clientOptions.Timeout;
 
         // Configure total request timeout (should be enough for all retries)
         var totalTimeout = TimeSpan.FromTicks(clientOptions.Timeout.Ticks * (clientOptions.MaxRetryAttempts + 1) * 2);

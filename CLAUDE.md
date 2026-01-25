@@ -23,7 +23,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 **Наступні:**
 - 📋 Фаза 7: Тестування та документація
 
-**Тести:** 197 unit tests (всі проходять)
+**Тести:** 199 unit tests (всі проходять)
 
 ## Project Structure
 
@@ -104,10 +104,11 @@ dotnet pack -c Release
 
 ## Gotchas
 
-- `CircuitBreaker.SamplingDuration` must be >= 2x `AttemptTimeout.Timeout` (validation error otherwise)
+- `CircuitBreaker.SamplingDuration` is automatically calculated as `max(2x Timeout, 60s)` to satisfy Polly validation
 - `IOAuthTokenStore` interface has 4 methods: `LoadAsync`, `SaveAsync`, `ClearAsync`, `ExistsAsync`
 - `FileTokenStore` implements `IDisposable` - dispose to release SemaphoreSlim
 - `FileTokenStore` accepts optional `ILogger<FileTokenStore>` for error logging
+- `FileTokenStore.SaveAsync` throws `GarminConnectException` on file I/O errors (with logging)
 - Resilience options (`MaxRetryAttempts`, `RetryDelay`, `Timeout`) are read from `GarminClientOptions`
 
 ## Reference

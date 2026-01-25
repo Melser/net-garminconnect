@@ -85,28 +85,47 @@ public sealed class FileTokenStore : IOAuthTokenStore, IDisposable
     }
 
     /// <inheritdoc />
+    /// <exception cref="GarminConnect.Exceptions.GarminConnectException">Thrown when token saving fails due to file access or serialization errors.</exception>
     public async Task SaveAsync(GarminConnectTokens tokens, CancellationToken cancellationToken = default)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
         ArgumentNullException.ThrowIfNull(tokens);
 
-        var directory = Path.GetDirectoryName(_tokenFilePath);
-        if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
-        {
-            Directory.CreateDirectory(directory);
-        }
-
-        var tokensWithTimestamp = tokens with { UpdatedAt = DateTimeOffset.UtcNow };
-        var json = JsonSerializer.Serialize(tokensWithTimestamp, JsonOptions);
-
-        await _lock.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
-            await File.WriteAllTextAsync(_tokenFilePath, json, cancellationToken).ConfigureAwait(false);
+            var directory = Path.GetDirectoryName(_tokenFilePath);
+            if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
+            {
+                Directory.CreateDirectory(directory);
+            }
+
+            var tokensWithTimestamp = tokens with { UpdatedAt = DateTimeOffset.UtcNow };
+            var json = JsonSerializer.Serialize(tokensWithTimestamp, JsonOptions);
+
+            await _lock.WaitAsync(cancellationToken).ConfigureAwait(false);
+            try
+            {
+                await File.WriteAllTextAsync(_tokenFilePath, json, cancellationToken).ConfigureAwait(false);
+            }
+            finally
+            {
+                _lock.Release();
+            }
         }
-        finally
+        catch (IOException ex)
         {
-            _lock.Release();
+            _logger?.LogError(ex, "Failed to save tokens to {FilePath}. Check disk space and file permissions", _tokenFilePath);
+            throw new Exceptions.GarminConnectException($"Failed to save tokens to {_tokenFilePath}. Check disk space and file permissions.", ex);
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            _logger?.LogError(ex, "Access denied when saving tokens to {FilePath}. Check file and directory permissions", _tokenFilePath);
+            throw new Exceptions.GarminConnectException($"Access denied when saving tokens to {_tokenFilePath}. Check file and directory permissions.", ex);
+        }
+        catch (JsonException ex)
+        {
+            _logger?.LogError(ex, "Failed to serialize tokens for storage at {FilePath}", _tokenFilePath);
+            throw new Exceptions.GarminConnectException($"Failed to serialize tokens for storage.", ex);
         }
     }
 
