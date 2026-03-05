@@ -264,6 +264,9 @@ public sealed partial class GarminClient
             {
                 var statusJson = await _apiClient.GetAsync<JsonElement>(statusUrl, cancellationToken).ConfigureAwait(false);
 
+                _logger?.LogInformation("Upload status response (attempt {Attempt}): {Json}",
+                    attempt, statusJson.GetRawText());
+
                 if (TryExtractActivityResult(statusJson, out var activityId, out var errorMessage))
                 {
                     if (activityId > 0)
@@ -281,6 +284,8 @@ public sealed partial class GarminClient
             }
             catch (GarminConnectException ex) when (ex.Message.Contains("server error", StringComparison.OrdinalIgnoreCase))
             {
+                _logger?.LogWarning("Upload status HTTP 500 (attempt {Attempt}): {Message}", attempt, ex.Message);
+
                 // Status endpoint may return HTTP 500 with failure details in the body
                 // Try to extract failure info from the error message (contains the JSON body)
                 if (TryParseFailureFromErrorBody(ex.Message, out var failureMsg))
