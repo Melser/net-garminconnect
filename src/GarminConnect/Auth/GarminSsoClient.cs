@@ -266,9 +266,9 @@ internal sealed partial class GarminSsoClient : IDisposable
 
         // Fallback: log the response for debugging and throw a descriptive error
         _logger?.LogWarning(
-            "Garmin SSO login: no ticket, no redirect, no recognized error. Status={StatusCode}, BodyPreview={Preview}",
+            "Garmin SSO login: no ticket, no redirect, no recognized error. Status={StatusCode}, Body={Body}",
             response.StatusCode,
-            html.Length > 500 ? html[..500] : html);
+            html);
         throw new GarminConnectAuthenticationException("Login failed: unable to extract authentication ticket");
     }
 
