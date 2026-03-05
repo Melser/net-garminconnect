@@ -343,13 +343,9 @@ public sealed partial class GarminClient
 
     private static long ParseCreationDateToEpochMs(string creationDate)
     {
-        // Format: "2023-09-29 01:58:19.113 GMT"
+        // Format varies: "2023-09-29 01:58:19.113 GMT", "2023-09-29 01:58:19.82 GMT", etc.
         var cleaned = creationDate.Replace(" GMT", "").Trim();
-        var dt = DateTimeOffset.ParseExact(
-            cleaned,
-            ["yyyy-MM-dd HH:mm:ss.fff", "yyyy-MM-dd HH:mm:ss"],
-            CultureInfo.InvariantCulture,
-            DateTimeStyles.AssumeUniversal);
+        var dt = DateTimeOffset.Parse(cleaned, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal);
         return dt.ToUnixTimeMilliseconds();
     }
 
