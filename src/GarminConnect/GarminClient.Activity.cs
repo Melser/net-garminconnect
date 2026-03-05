@@ -182,16 +182,19 @@ public sealed partial class GarminClient
         ArgumentNullException.ThrowIfNull(fileStream);
         ArgumentException.ThrowIfNullOrWhiteSpace(fileName);
 
-        var contentType = format switch
+        var (contentType, formatExtension) = format switch
         {
-            ActivityFileFormat.Fit => "application/vnd.ant.fit",
-            ActivityFileFormat.Tcx => "application/vnd.garmin.tcx+xml",
-            ActivityFileFormat.Gpx => "application/gpx+xml",
+            ActivityFileFormat.Fit => ("application/vnd.ant.fit", ".fit"),
+            ActivityFileFormat.Tcx => ("application/vnd.garmin.tcx+xml", ".tcx"),
+            ActivityFileFormat.Gpx => ("application/gpx+xml", ".gpx"),
             _ => throw new GarminConnectInvalidFileFormatException($"Upload not supported for format: {format}", fileName)
         };
 
+        // Garmin expects format suffix in URL (e.g., /upload-service/upload/.tcx)
+        var uploadUrl = Endpoints.ActivityUpload + formatExtension;
+
         var response = await _apiClient.PostFileAsync<UploadResponse>(
-            Endpoints.ActivityUpload,
+            uploadUrl,
             fileStream,
             fileName,
             contentType,
@@ -261,25 +264,31 @@ public sealed partial class GarminClient
             {
                 var statusJson = await _apiClient.GetAsync<JsonElement>(statusUrl, cancellationToken).ConfigureAwait(false);
 
-                // Response might wrap in detailedImportResult or be the result directly
-                var target = statusJson.TryGetProperty("detailedImportResult", out var importResult)
-                    ? importResult
-                    : statusJson;
-
-                if (TryGetActivityIdFromJson(target, out var activityId))
+                if (TryExtractActivityResult(statusJson, out var activityId, out var errorMessage))
                 {
-                    _logger?.LogInformation(
-                        "Upload processing complete, activityId={ActivityId} (poll attempt {Attempt})",
-                        activityId, attempt);
-                    return activityId;
-                }
+                    if (activityId > 0)
+                    {
+                        _logger?.LogInformation(
+                            "Upload processing complete, activityId={ActivityId} (poll attempt {Attempt})",
+                            activityId, attempt);
+                        return activityId;
+                    }
 
-                if (HasFailuresInJson(target, out var errorMessage))
-                {
                     throw new GarminConnectException($"Activity upload failed during processing: {errorMessage}");
                 }
 
                 _logger?.LogDebug("Upload still processing (attempt {Attempt}/{Max})", attempt, UploadPollMaxAttempts);
+            }
+            catch (GarminConnectException ex) when (ex.Message.Contains("server error", StringComparison.OrdinalIgnoreCase))
+            {
+                // Status endpoint may return HTTP 500 with failure details in the body
+                // Try to extract failure info from the error message (contains the JSON body)
+                if (TryParseFailureFromErrorBody(ex.Message, out var failureMsg))
+                {
+                    throw new GarminConnectException($"Activity upload failed during processing: {failureMsg}");
+                }
+
+                throw;
             }
             catch (GarminConnectException) { throw; }
             catch (Exception ex)
@@ -290,6 +299,52 @@ public sealed partial class GarminClient
 
         throw new GarminConnectException(
             $"Activity upload timed out after {UploadPollMaxAttempts}s waiting for processing (uploadId={result.UploadId})");
+    }
+
+    private static bool TryExtractActivityResult(JsonElement json, out long activityId, out string errorMessage)
+    {
+        activityId = 0;
+        errorMessage = "Unknown error";
+
+        // Response might wrap in detailedImportResult or be the result directly
+        var target = json.TryGetProperty("detailedImportResult", out var importResult)
+            ? importResult
+            : json;
+
+        if (TryGetActivityIdFromJson(target, out activityId))
+            return true;
+
+        if (HasFailuresInJson(target, out errorMessage))
+        {
+            activityId = 0;
+            return true; // Found a result (failure)
+        }
+
+        return false; // Still processing
+    }
+
+    private static bool TryParseFailureFromErrorBody(string errorMessage, out string failureMessage)
+    {
+        failureMessage = "Unknown error";
+
+        // Error body might contain JSON like: {"detailedImportResult":{...,"failures":[...]}}
+        var jsonStart = errorMessage.IndexOf('{');
+        if (jsonStart < 0) return false;
+
+        try
+        {
+            var json = JsonDocument.Parse(errorMessage[jsonStart..]);
+            var root = json.RootElement;
+            var target = root.TryGetProperty("detailedImportResult", out var importResult)
+                ? importResult
+                : root;
+
+            return HasFailuresInJson(target, out failureMessage);
+        }
+        catch
+        {
+            return false;
+        }
     }
 
     private static bool TryGetActivityIdFromJson(JsonElement json, out long activityId)
