@@ -145,6 +145,7 @@ public sealed class GarminApiClient : IGarminApiClient
     {
         var request = new HttpRequestMessage(HttpMethod.Post, endpoint);
         AddAuthorizationHeader(request);
+        request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 
         var content = new MultipartFormDataContent();
         var streamContent = new StreamContent(file);
@@ -155,11 +156,29 @@ public sealed class GarminApiClient : IGarminApiClient
         try
         {
             using var response = await SendRequestAsync(request, cancellationToken).ConfigureAwait(false);
-            return await DeserializeResponseAsync<T>(response, cancellationToken).ConfigureAwait(false);
+
+            // Log raw response for debugging upload issues
+            var rawBody = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+            _logger?.LogDebug("Upload response ({StatusCode}): {Body}", (int)response.StatusCode, rawBody);
+
+            // Re-create stream for deserialization since we consumed it
+            using var bodyStream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(rawBody));
+            var result = await JsonSerializer.DeserializeAsync<T>(bodyStream, _jsonOptions, cancellationToken).ConfigureAwait(false);
+
+            if (result is null)
+            {
+                throw new GarminConnectException("Failed to deserialize response: result is null");
+            }
+
+            return result;
+        }
+        catch (JsonException ex)
+        {
+            _logger?.LogError(ex, "Failed to deserialize upload response");
+            throw new GarminConnectException($"Failed to deserialize upload response: {ex.Message}", ex);
         }
         finally
         {
-            // Content is disposed with request, but we explicitly dispose to be safe
             request.Dispose();
         }
     }
