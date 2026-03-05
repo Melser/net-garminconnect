@@ -86,10 +86,10 @@ public record Activity
     public double? BmrCalories { get; init; }
 
     [JsonPropertyName("averageHR")]
-    public int? AverageHeartRate { get; init; }
+    public double? AverageHeartRate { get; init; }
 
     [JsonPropertyName("maxHR")]
-    public int? MaxHeartRate { get; init; }
+    public double? MaxHeartRate { get; init; }
 
     [JsonPropertyName("averageRunningCadenceInStepsPerMinute")]
     public double? AverageRunningCadence { get; init; }
@@ -110,7 +110,7 @@ public record Activity
     public double? MaxSwimCadence { get; init; }
 
     [JsonPropertyName("steps")]
-    public int? Steps { get; init; }
+    public double? Steps { get; init; }
 
     [JsonPropertyName("userRating")]
     public double? UserRating { get; init; }
@@ -137,13 +137,13 @@ public record Activity
     public long? DeviceId { get; init; }
 
     [JsonPropertyName("timeZoneId")]
-    public int? TimeZoneId { get; init; }
+    public double? TimeZoneId { get; init; }
 
     [JsonPropertyName("beginTimestamp")]
     public long? BeginTimestamp { get; init; }
 
     [JsonPropertyName("sportTypeId")]
-    public int? SportTypeId { get; init; }
+    public double? SportTypeId { get; init; }
 
     [JsonPropertyName("avgPower")]
     public double? AveragePower { get; init; }
@@ -158,7 +158,7 @@ public record Activity
     public double? AnaerobicTrainingEffect { get; init; }
 
     [JsonPropertyName("strokes")]
-    public int? Strokes { get; init; }
+    public double? Strokes { get; init; }
 
     [JsonPropertyName("normPower")]
     public double? NormalizedPower { get; init; }
@@ -206,13 +206,13 @@ public record Activity
     public double? AvgGroundContactBalance { get; init; }
 
     [JsonPropertyName("lactateThresholdBpm")]
-    public int? LactateThresholdBpm { get; init; }
+    public double? LactateThresholdBpm { get; init; }
 
     [JsonPropertyName("lactateThresholdSpeed")]
     public double? LactateThresholdSpeed { get; init; }
 
     [JsonPropertyName("maxFtp")]
-    public int? MaxFtp { get; init; }
+    public double? MaxFtp { get; init; }
 
     [JsonPropertyName("avgStrokeDistance")]
     public double? AvgStrokeDistance { get; init; }
@@ -230,10 +230,10 @@ public record Activity
     public double? AvgSwolf { get; init; }
 
     [JsonPropertyName("activeLengths")]
-    public int? ActiveLengths { get; init; }
+    public double? ActiveLengths { get; init; }
 
     [JsonPropertyName("numberOfActiveLengths")]
-    public int? NumberOfActiveLengths { get; init; }
+    public double? NumberOfActiveLengths { get; init; }
 
     [JsonPropertyName("poolLength")]
     public double? PoolLength { get; init; }
@@ -242,7 +242,7 @@ public record Activity
     public string? UnitOfPoolLength { get; init; }
 
     [JsonPropertyName("numberOfSplits")]
-    public int? NumberOfSplits { get; init; }
+    public double? NumberOfSplits { get; init; }
 
     [JsonPropertyName("maxBottomTime")]
     public double? MaxBottomTime { get; init; }
@@ -260,10 +260,10 @@ public record Activity
     public double? EBikeBatteryRemaining { get; init; }
 
     [JsonPropertyName("eBikeAssistMode")]
-    public int? EBikeAssistMode { get; init; }
+    public double? EBikeAssistMode { get; init; }
 
     [JsonPropertyName("eBikeAssistLevelMax")]
-    public int? EBikeAssistLevelMax { get; init; }
+    public double? EBikeAssistLevelMax { get; init; }
 
     [JsonPropertyName("avgGrit")]
     public double? AvgGrit { get; init; }
@@ -272,7 +272,7 @@ public record Activity
     public double? AvgFlow { get; init; }
 
     [JsonPropertyName("jumpCount")]
-    public int? JumpCount { get; init; }
+    public double? JumpCount { get; init; }
 
     [JsonPropertyName("caloriesEstimated")]
     public double? CaloriesEstimated { get; init; }
@@ -362,10 +362,10 @@ public record Activity
     public List<SplitSummary>? SplitSummaries { get; init; }
 
     [JsonPropertyName("moderateIntensityMinutes")]
-    public int? ModerateIntensityMinutes { get; init; }
+    public double? ModerateIntensityMinutes { get; init; }
 
     [JsonPropertyName("vigorousIntensityMinutes")]
-    public int? VigorousIntensityMinutes { get; init; }
+    public double? VigorousIntensityMinutes { get; init; }
 
     [JsonPropertyName("pr")]
     public bool? PersonalRecord { get; init; }
@@ -398,7 +398,7 @@ public record ActivityType
     public string? TypeKey { get; init; }
 
     [JsonPropertyName("parentTypeId")]
-    public int? ParentTypeId { get; init; }
+    public double? ParentTypeId { get; init; }
 
     [JsonPropertyName("isHidden")]
     public bool? IsHidden { get; init; }
@@ -422,7 +422,7 @@ public record EventType
     public string? TypeKey { get; init; }
 
     [JsonPropertyName("sortOrder")]
-    public int? SortOrder { get; init; }
+    public double? SortOrder { get; init; }
 }
 
 /// <summary>
@@ -431,7 +431,7 @@ public record EventType
 public record SplitSummary
 {
     [JsonPropertyName("noOfSplits")]
-    public int? NoOfSplits { get; init; }
+    public double? NoOfSplits { get; init; }
 
     [JsonPropertyName("totalAscent")]
     public double? TotalAscent { get; init; }
@@ -446,7 +446,7 @@ public record SplitSummary
     public double? MaxElevationLoss { get; init; }
 
     [JsonPropertyName("numClimbs")]
-    public int? NumClimbs { get; init; }
+    public double? NumClimbs { get; init; }
 
     [JsonPropertyName("splitType")]
     public string? SplitType { get; init; }
@@ -464,10 +464,10 @@ public record SplitSummary
     public double? MaxSpeed { get; init; }
 
     [JsonPropertyName("averageHR")]
-    public int? AverageHeartRate { get; init; }
+    public double? AverageHeartRate { get; init; }
 
     [JsonPropertyName("maxHR")]
-    public int? MaxHeartRate { get; init; }
+    public double? MaxHeartRate { get; init; }
 
     [JsonPropertyName("averagePower")]
     public double? AveragePower { get; init; }
