@@ -147,7 +147,14 @@ public sealed class GarminApiClient : IGarminApiClient
         AddAuthorizationHeader(request);
         request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 
-        var content = new MultipartFormDataContent();
+        // Use a simple alphanumeric boundary to avoid .NET's default quoted boundary issue.
+        // Some servers (including Garmin) don't parse quoted boundaries in Content-Type correctly.
+        var boundary = $"----WebKitFormBoundary{Guid.NewGuid():N}";
+        var content = new MultipartFormDataContent(boundary);
+        // Remove quotes that .NET adds around the boundary parameter
+        content.Headers.Remove("Content-Type");
+        content.Headers.TryAddWithoutValidation("Content-Type", $"multipart/form-data; boundary={boundary}");
+
         var streamContent = new StreamContent(file);
         streamContent.Headers.ContentType = new MediaTypeHeaderValue(contentType ?? "application/octet-stream");
         content.Add(streamContent, "file", fileName);
