@@ -2,6 +2,7 @@ using System.Net.Http.Headers;
 using GarminConnect.Api;
 using GarminConnect.Exceptions;
 using GarminConnect.Models;
+using Microsoft.Extensions.Logging;
 
 namespace GarminConnect;
 
@@ -192,30 +193,30 @@ public sealed partial class GarminClient
             contentType,
             cancellationToken).ConfigureAwait(false);
 
-        if (response?.DetailedImportResult?.Successes?.Count > 0)
-        {
-            return response.DetailedImportResult.Successes[0].InternalId;
-        }
+        var result = response?.DetailedImportResult;
 
-        if (response?.DetailedImportResult?.Failures?.Count > 0)
+        if (result is null)
+            throw new GarminConnectException("Activity upload failed: No response from server");
+
+        if (result.Failures?.Count > 0)
         {
-            var failure = response.DetailedImportResult.Failures[0];
+            var failure = result.Failures[0];
             throw new GarminConnectException($"Activity upload failed: {failure.Messages?[0]?.Content ?? "Unknown error"}");
         }
 
-        // TCX/GPX uploads may return the activity ID in CreatedId instead of Successes
-        if (response?.DetailedImportResult?.CreatedId is > 0)
-        {
-            return response.DetailedImportResult.CreatedId.Value;
-        }
+        if (result.Successes?.Count > 0)
+            return result.Successes[0].InternalId;
 
-        // Fallback to UploadId if no other ID is available
-        if (response?.DetailedImportResult?.UploadId is > 0)
-        {
-            return response.DetailedImportResult.UploadId.Value;
-        }
+        if (result.CreatedId is > 0)
+            return result.CreatedId.Value;
 
-        throw new GarminConnectException("Activity upload failed: No response from server");
+        // Log the full response for debugging when no ID is found
+        _logger?.LogWarning(
+            "Upload returned no activity ID. UploadId={UploadId}, CreatedId={CreatedId}, Successes={Successes}, Failures={Failures}",
+            result.UploadId, result.CreatedId, result.Successes?.Count ?? 0, result.Failures?.Count ?? 0);
+
+        throw new GarminConnectException(
+            $"Activity upload completed but no activity ID returned (uploadId={result.UploadId}, createdId={result.CreatedId})");
     }
 
     /// <inheritdoc />

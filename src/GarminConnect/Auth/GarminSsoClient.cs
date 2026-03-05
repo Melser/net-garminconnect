@@ -16,7 +16,8 @@ namespace GarminConnect.Auth;
 /// </summary>
 internal sealed partial class GarminSsoClient : IDisposable
 {
-    private const string UserAgent = "GCM-iOS-5.7.2.1";
+    private const string UserAgent =
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36";
 
     // SSO Endpoints
     private const string SsoEmbedUrl = "https://sso.garmin.com/sso/embed";
@@ -47,7 +48,8 @@ internal sealed partial class GarminSsoClient : IDisposable
         {
             CookieContainer = _cookies,
             AllowAutoRedirect = true,
-            UseCookies = true
+            UseCookies = true,
+            AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate | DecompressionMethods.Brotli
         };
 
         _httpClient = new HttpClient(handler)
@@ -56,8 +58,17 @@ internal sealed partial class GarminSsoClient : IDisposable
         };
 
         _httpClient.DefaultRequestHeaders.UserAgent.ParseAdd(UserAgent);
-        _httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("text/html"));
-        _httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+        _httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("text/html", 0.9));
+        _httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/xhtml+xml", 0.9));
+        _httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/xml", 0.8));
+        _httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("*/*", 0.7));
+        _httpClient.DefaultRequestHeaders.AcceptLanguage.ParseAdd("en-US,en;q=0.9");
+        _httpClient.DefaultRequestHeaders.AcceptEncoding.ParseAdd("gzip, deflate, br");
+        _httpClient.DefaultRequestHeaders.Add("Sec-Fetch-Dest", "document");
+        _httpClient.DefaultRequestHeaders.Add("Sec-Fetch-Mode", "navigate");
+        _httpClient.DefaultRequestHeaders.Add("Sec-Fetch-Site", "same-origin");
+        _httpClient.DefaultRequestHeaders.Add("Sec-Fetch-User", "?1");
+        _httpClient.DefaultRequestHeaders.Add("Upgrade-Insecure-Requests", "1");
     }
 
     /// <summary>
@@ -176,6 +187,9 @@ internal sealed partial class GarminSsoClient : IDisposable
         var csrfMatch = CsrfTokenRegex().Match(html);
         var csrfToken = csrfMatch.Success ? csrfMatch.Groups[1].Value : "";
 
+        _logger?.LogDebug("Garmin SSO login page: CSRF={CsrfFound}, token={Token}, pageLength={Length}",
+            csrfMatch.Success, csrfToken.Length > 0 ? csrfToken[..Math.Min(8, csrfToken.Length)] + "..." : "(empty)", html.Length);
+
         // Extract form parameters
         var serviceUrl = ServiceUrlRegex().Match(html);
         var formParams = new Dictionary<string, string>();
@@ -183,6 +197,11 @@ internal sealed partial class GarminSsoClient : IDisposable
         if (serviceUrl.Success)
         {
             formParams["service"] = HttpUtility.HtmlDecode(serviceUrl.Groups[1].Value);
+            _logger?.LogDebug("Garmin SSO service URL: {Service}", formParams["service"]);
+        }
+        else
+        {
+            _logger?.LogWarning("Garmin SSO login page: no service URL found");
         }
 
         return (csrfToken, formParams);
@@ -209,17 +228,20 @@ internal sealed partial class GarminSsoClient : IDisposable
         }
 
         using var content = new FormUrlEncodedContent(formData);
-        using var response = await _httpClient.PostAsync(SsoSigninUrl, content, cancellationToken).ConfigureAwait(false);
+        using var request = new HttpRequestMessage(HttpMethod.Post, SsoSigninUrl) { Content = content };
+        request.Headers.Referrer = new Uri(SsoEmbedUrl);
+        request.Headers.Add("Origin", "https://sso.garmin.com");
+        using var response = await _httpClient.SendAsync(request, cancellationToken).ConfigureAwait(false);
 
         var html = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
         _logger?.LogDebug("Garmin SSO response status: {StatusCode}, body length: {Length}",
             response.StatusCode, html.Length);
 
-        // Check for Forbidden first — clear auth failure
+        // Check for Forbidden — could be wrong credentials or bot detection
         if (response.StatusCode == HttpStatusCode.Forbidden)
         {
-            _logger?.LogWarning("Garmin SSO returned 403 Forbidden");
-            throw new GarminConnectAuthenticationException("Invalid email or password");
+            _logger?.LogWarning("Garmin SSO returned 403 Forbidden. Body={Body}", html);
+            throw new GarminConnectAuthenticationException("Garmin SSO returned 403 Forbidden. This may indicate incorrect credentials or bot detection.");
         }
 
         // Check for MFA requirement
