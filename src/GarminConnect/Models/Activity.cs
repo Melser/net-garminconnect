@@ -80,10 +80,10 @@ public record Activity
     public string? OwnerProfileImageUrlLarge { get; init; }
 
     [JsonPropertyName("calories")]
-    public int? Calories { get; init; }
+    public double? Calories { get; init; }
 
     [JsonPropertyName("bmrCalories")]
-    public int? BmrCalories { get; init; }
+    public double? BmrCalories { get; init; }
 
     [JsonPropertyName("averageHR")]
     public int? AverageHeartRate { get; init; }
@@ -275,10 +275,10 @@ public record Activity
     public int? JumpCount { get; init; }
 
     [JsonPropertyName("caloriesEstimated")]
-    public int? CaloriesEstimated { get; init; }
+    public double? CaloriesEstimated { get; init; }
 
     [JsonPropertyName("caloriesConsumed")]
-    public int? CaloriesConsumed { get; init; }
+    public double? CaloriesConsumed { get; init; }
 
     [JsonPropertyName("waterEstimated")]
     public double? WaterEstimated { get; init; }
@@ -476,5 +476,5 @@ public record SplitSummary
     public double? MaxPower { get; init; }
 
     [JsonPropertyName("calories")]
-    public int? Calories { get; init; }
+    public double? Calories { get; init; }
 }
