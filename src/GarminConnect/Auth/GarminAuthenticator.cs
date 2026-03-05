@@ -12,7 +12,7 @@ public sealed class GarminAuthenticator : IGarminAuthenticator, IDisposable
 {
     private readonly IOAuthTokenStore? _tokenStore;
     private readonly IMfaHandler? _mfaHandler;
-    private readonly ILogger<GarminAuthenticator>? _logger;
+    private readonly ILogger? _logger;
     private readonly GarminSsoClient _ssoClient;
 
     private GarminConnectTokens? _tokens;
@@ -27,7 +27,7 @@ public sealed class GarminAuthenticator : IGarminAuthenticator, IDisposable
     public GarminAuthenticator(
         IOAuthTokenStore? tokenStore = null,
         IMfaHandler? mfaHandler = null,
-        ILogger<GarminAuthenticator>? logger = null)
+        ILogger? logger = null)
     {
         _tokenStore = tokenStore;
         _mfaHandler = mfaHandler;

@@ -38,7 +38,7 @@ public sealed partial class GarminClient : IGarminClient
         };
 
         _apiClient = new GarminApiClient(httpClient, ownsHttpClient: true);
-        _authenticator = new GarminAuthenticator(tokenStore, mfaHandler);
+        _authenticator = new GarminAuthenticator(tokenStore, mfaHandler, logger);
         _ownsApiClient = true;
     }
 
