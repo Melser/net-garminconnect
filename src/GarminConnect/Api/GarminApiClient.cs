@@ -17,7 +17,7 @@ public sealed class GarminApiClient : IGarminApiClient
 
     private readonly HttpClient _httpClient;
     private readonly JsonSerializerOptions _jsonOptions;
-    private readonly ILogger<GarminApiClient>? _logger;
+    private readonly ILogger? _logger;
     private readonly bool _ownsHttpClient;
 
     private volatile string? _accessToken;
@@ -32,7 +32,7 @@ public sealed class GarminApiClient : IGarminApiClient
     /// Set to false when HttpClient is managed by IHttpClientFactory or DI container.
     /// </param>
     /// <param name="logger">Optional logger instance.</param>
-    public GarminApiClient(HttpClient httpClient, bool ownsHttpClient = true, ILogger<GarminApiClient>? logger = null)
+    public GarminApiClient(HttpClient httpClient, bool ownsHttpClient = true, ILogger? logger = null)
     {
         _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
         _ownsHttpClient = ownsHttpClient;

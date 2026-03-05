@@ -37,7 +37,7 @@ public sealed partial class GarminClient : IGarminClient
             BaseAddress = new Uri(Endpoints.BaseUrl)
         };
 
-        _apiClient = new GarminApiClient(httpClient, ownsHttpClient: true);
+        _apiClient = new GarminApiClient(httpClient, ownsHttpClient: true, logger: logger);
         _authenticator = new GarminAuthenticator(tokenStore, mfaHandler, logger);
         _ownsApiClient = true;
     }
