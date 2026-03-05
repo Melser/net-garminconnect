@@ -203,6 +203,18 @@ public sealed partial class GarminClient
             throw new GarminConnectException($"Activity upload failed: {failure.Messages?[0]?.Content ?? "Unknown error"}");
         }
 
+        // TCX/GPX uploads may return the activity ID in CreatedId instead of Successes
+        if (response?.DetailedImportResult?.CreatedId is > 0)
+        {
+            return response.DetailedImportResult.CreatedId.Value;
+        }
+
+        // Fallback to UploadId if no other ID is available
+        if (response?.DetailedImportResult?.UploadId is > 0)
+        {
+            return response.DetailedImportResult.UploadId.Value;
+        }
+
         throw new GarminConnectException("Activity upload failed: No response from server");
     }
 
@@ -227,6 +239,8 @@ public sealed partial class GarminClient
 
     private record DetailedImportResult
     {
+        public long? CreatedId { get; init; }
+        public long? UploadId { get; init; }
         public List<UploadSuccess>? Successes { get; init; }
         public List<UploadFailure>? Failures { get; init; }
     }
