@@ -157,7 +157,13 @@ public sealed class GarminApiClient : IGarminApiClient
 
         var streamContent = new StreamContent(file);
         streamContent.Headers.ContentType = new MediaTypeHeaderValue(contentType ?? "application/octet-stream");
-        content.Add(streamContent, "file", fileName);
+        // Manually set Content-Disposition to match Python requests format:
+        // - Quoted name and filename values
+        // - No filename* (RFC 5987) parameter
+        streamContent.Headers.TryAddWithoutValidation(
+            "Content-Disposition",
+            $"form-data; name=\"file\"; filename=\"{fileName}\"");
+        content.Add(streamContent);
         request.Content = content;
 
         // Log request details for debugging
