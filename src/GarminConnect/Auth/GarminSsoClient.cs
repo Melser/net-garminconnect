@@ -212,6 +212,15 @@ internal sealed partial class GarminSsoClient : IDisposable
         using var response = await _httpClient.PostAsync(SsoSigninUrl, content, cancellationToken).ConfigureAwait(false);
 
         var html = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+        _logger?.LogDebug("Garmin SSO response status: {StatusCode}, body length: {Length}",
+            response.StatusCode, html.Length);
+
+        // Check for Forbidden first — clear auth failure
+        if (response.StatusCode == HttpStatusCode.Forbidden)
+        {
+            _logger?.LogWarning("Garmin SSO returned 403 Forbidden");
+            throw new GarminConnectAuthenticationException("Invalid email or password");
+        }
 
         // Check for MFA requirement
         if (html.Contains("MFA") || html.Contains("verifyMFA") || html.Contains("mfa-code"))
@@ -222,23 +231,19 @@ internal sealed partial class GarminSsoClient : IDisposable
             return new LoginResult { RequiresMfa = true, MfaClientState = state };
         }
 
-        // Check for ticket in response
+        // Check for ticket in response body
         var ticketMatch = TicketRegex().Match(html);
         if (ticketMatch.Success)
         {
             return new LoginResult { Ticket = ticketMatch.Groups[1].Value };
         }
 
-        // Check for error
-        if (html.Contains("error") || html.Contains("invalid") || response.StatusCode == HttpStatusCode.Forbidden)
-        {
-            throw new GarminConnectAuthenticationException("Invalid email or password");
-        }
-
         // Try to extract ticket from redirect
         var location = response.Headers.Location?.ToString();
         if (location is not null)
         {
+            _logger?.LogDebug("Garmin SSO redirect location: {Location}", location);
+
             var ticketFromUrl = TicketRegex().Match(location);
             if (ticketFromUrl.Success)
             {
@@ -246,6 +251,24 @@ internal sealed partial class GarminSsoClient : IDisposable
             }
         }
 
+        // Check for specific authentication error indicators in the HTML.
+        // Garmin SSO shows errors in elements with class "status-error" or specific error message divs.
+        // We check for concrete error patterns rather than generic "error"/"invalid" substrings
+        // that would false-positive on CSS classes and JavaScript code.
+        var authErrorMatch = AuthErrorRegex().Match(html);
+        if (authErrorMatch.Success)
+        {
+            var errorText = (authErrorMatch.Groups[1].Value + authErrorMatch.Groups[2].Value + authErrorMatch.Groups[3].Value).Trim();
+            _logger?.LogWarning("Garmin SSO authentication error: {Error}", errorText);
+            throw new GarminConnectAuthenticationException(
+                string.IsNullOrWhiteSpace(errorText) ? "Invalid email or password" : errorText);
+        }
+
+        // Fallback: log the response for debugging and throw a descriptive error
+        _logger?.LogWarning(
+            "Garmin SSO login: no ticket, no redirect, no recognized error. Status={StatusCode}, BodyPreview={Preview}",
+            response.StatusCode,
+            html.Length > 500 ? html[..500] : html);
         throw new GarminConnectAuthenticationException("Login failed: unable to extract authentication ticket");
     }
 
@@ -291,9 +314,12 @@ internal sealed partial class GarminSsoClient : IDisposable
             }
         }
 
-        if (html.Contains("error") || html.Contains("invalid"))
+        var mfaErrorMatch = AuthErrorRegex().Match(html);
+        if (mfaErrorMatch.Success)
         {
-            throw new GarminConnectAuthenticationException("Invalid MFA code");
+            var errorText = (mfaErrorMatch.Groups[1].Value + mfaErrorMatch.Groups[2].Value + mfaErrorMatch.Groups[3].Value).Trim();
+            throw new GarminConnectAuthenticationException(
+                string.IsNullOrWhiteSpace(errorText) ? "Invalid MFA code" : errorText);
         }
 
         throw new GarminConnectAuthenticationException("MFA verification failed: unable to extract ticket");
@@ -467,6 +493,12 @@ internal sealed partial class GarminSsoClient : IDisposable
 
     [GeneratedRegex(@"MFA_TOKEN[""']?\s*[:=]\s*[""']?([^""']+)", RegexOptions.IgnoreCase)]
     private static partial Regex MfaStateRegex();
+
+    // Matches Garmin SSO error messages shown in status-error elements or data-error attributes.
+    // Garmin renders auth errors inside: <div class="status-error">...</div>
+    // or as title/data attributes on error containers.
+    [GeneratedRegex(@"class=""[^""]*status-error[^""]*""[^>]*>([^<]+)<|""error-message""\s*>([^<]+)<|data-error=""([^""]+)""|<title>\s*Error\b", RegexOptions.IgnoreCase | RegexOptions.Singleline)]
+    private static partial Regex AuthErrorRegex();
 
     private record LoginResult
     {
