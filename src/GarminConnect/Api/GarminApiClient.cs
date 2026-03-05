@@ -160,6 +160,16 @@ public sealed class GarminApiClient : IGarminApiClient
         content.Add(streamContent, "file", fileName);
         request.Content = content;
 
+        // Log request details for debugging
+        _logger?.LogWarning("Upload request: ContentType={ContentType}, ContentLength={Length}, Boundary={Boundary}",
+            content.Headers.ContentType?.ToString(),
+            content.Headers.ContentLength,
+            boundary);
+        _logger?.LogWarning("Upload part headers: ContentDisposition={Disposition}, PartContentType={PartType}, StreamLength={StreamLen}",
+            streamContent.Headers.ContentDisposition?.ToString(),
+            streamContent.Headers.ContentType?.ToString(),
+            file.CanSeek ? file.Length : -1);
+
         try
         {
             using var response = await SendRequestAsync(request, cancellationToken).ConfigureAwait(false);
