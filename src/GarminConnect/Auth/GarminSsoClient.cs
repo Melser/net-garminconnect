@@ -258,7 +258,7 @@ internal sealed partial class GarminSsoClient : IDisposable
         var authErrorMatch = AuthErrorRegex().Match(html);
         if (authErrorMatch.Success)
         {
-            var errorText = (authErrorMatch.Groups[1].Value + authErrorMatch.Groups[2].Value + authErrorMatch.Groups[3].Value).Trim();
+            var errorText = (authErrorMatch.Groups[1].Value + authErrorMatch.Groups[2].Value).Trim();
             _logger?.LogWarning("Garmin SSO authentication error: {Error}", errorText);
             throw new GarminConnectAuthenticationException(
                 string.IsNullOrWhiteSpace(errorText) ? "Invalid email or password" : errorText);
@@ -266,9 +266,10 @@ internal sealed partial class GarminSsoClient : IDisposable
 
         // Fallback: log the response for debugging and throw a descriptive error
         _logger?.LogWarning(
-            "Garmin SSO login: no ticket, no redirect, no recognized error. Status={StatusCode}, Body={Body}",
+            "Garmin SSO login: no ticket, no redirect, no recognized error. Status={StatusCode}, BodyLength={Length}, BodyPreview={Preview}",
             response.StatusCode,
-            html);
+            html.Length,
+            html.Length > 1000 ? html[..1000] : html);
         throw new GarminConnectAuthenticationException("Login failed: unable to extract authentication ticket");
     }
 
@@ -317,7 +318,7 @@ internal sealed partial class GarminSsoClient : IDisposable
         var mfaErrorMatch = AuthErrorRegex().Match(html);
         if (mfaErrorMatch.Success)
         {
-            var errorText = (mfaErrorMatch.Groups[1].Value + mfaErrorMatch.Groups[2].Value + mfaErrorMatch.Groups[3].Value).Trim();
+            var errorText = (mfaErrorMatch.Groups[1].Value + mfaErrorMatch.Groups[2].Value).Trim();
             throw new GarminConnectAuthenticationException(
                 string.IsNullOrWhiteSpace(errorText) ? "Invalid MFA code" : errorText);
         }
@@ -494,10 +495,10 @@ internal sealed partial class GarminSsoClient : IDisposable
     [GeneratedRegex(@"MFA_TOKEN[""']?\s*[:=]\s*[""']?([^""']+)", RegexOptions.IgnoreCase)]
     private static partial Regex MfaStateRegex();
 
-    // Matches Garmin SSO error messages shown in status-error elements or data-error attributes.
-    // Garmin renders auth errors inside: <div class="status-error">...</div>
-    // or as title/data attributes on error containers.
-    [GeneratedRegex(@"class=""[^""]*status-error[^""]*""[^>]*>([^<]+)<|""error-message""\s*>([^<]+)<|data-error=""([^""]+)""|<title>\s*Error\b", RegexOptions.IgnoreCase | RegexOptions.Singleline)]
+    // Matches Garmin SSO error messages:
+    //   Group 1: <div id="status" class="error">message</div>
+    //   Group 2: JS variable: var result = "Forbidden Exception";
+    [GeneratedRegex(@"id=""status""[^>]*class=""[^""]*error[^""]*""[^>]*>([^<]+)<|var\s+result\s*=\s*""([^""]+)""", RegexOptions.IgnoreCase | RegexOptions.Singleline)]
     private static partial Regex AuthErrorRegex();
 
     private record LoginResult
