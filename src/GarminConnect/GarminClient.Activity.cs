@@ -182,22 +182,16 @@ public sealed partial class GarminClient
         ArgumentNullException.ThrowIfNull(fileStream);
         ArgumentException.ThrowIfNullOrWhiteSpace(fileName);
 
-        var (contentType, formatSuffix) = format switch
-        {
-            ActivityFileFormat.Fit => ("application/vnd.ant.fit", "/.fit"),
-            ActivityFileFormat.Tcx => ("application/vnd.garmin.tcx+xml", "/.tcx"),
-            ActivityFileFormat.Gpx => ("application/gpx+xml", "/.gpx"),
-            _ => throw new GarminConnectInvalidFileFormatException($"Upload not supported for format: {format}", fileName)
-        };
+        // Validate format is supported for upload
+        if (format is not (ActivityFileFormat.Fit or ActivityFileFormat.Tcx or ActivityFileFormat.Gpx))
+            throw new GarminConnectInvalidFileFormatException($"Upload not supported for format: {format}", fileName);
 
-        // Garmin expects format suffix in URL (e.g., /upload-service/upload/.tcx)
-        var uploadUrl = Endpoints.ActivityUpload + formatSuffix;
-
+        // Upload to base URL without format suffix (matching python-garminconnect behavior)
         var response = await _apiClient.PostFileAsync<UploadResponse>(
-            uploadUrl,
+            Endpoints.ActivityUpload,
             fileStream,
             fileName,
-            contentType,
+            "application/octet-stream",
             cancellationToken).ConfigureAwait(false);
 
         var result = response?.DetailedImportResult;
