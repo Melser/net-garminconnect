@@ -142,6 +142,9 @@ internal static class Endpoints
     /// <summary>Upload activity endpoint.</summary>
     public const string ActivityUpload = "/upload-service/upload";
 
+    /// <summary>Upload status endpoint. Format: {0} = creation timestamp ms, {1} = upload uuid (no dashes)</summary>
+    public const string ActivityUploadStatus = "/activity-service/activity/status/{0}/{1}";
+
     #endregion
 
     #region Body Composition & Weight

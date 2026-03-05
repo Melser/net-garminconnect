@@ -1,4 +1,6 @@
+using System.Globalization;
 using System.Net.Http.Headers;
+using System.Text.Json;
 using GarminConnect.Api;
 using GarminConnect.Exceptions;
 using GarminConnect.Models;
@@ -11,6 +13,8 @@ public sealed partial class GarminClient
     private const int DefaultActivityLimit = 20;
     private const int MaxActivityLimit = 1000;
     private const int MaxPaginationIterations = 100; // Safety limit: 100 * 20 = 2000 activities max
+    private const int UploadPollIntervalMs = 1000;
+    private const int UploadPollMaxAttempts = 30; // 30 seconds max wait
 
     #region Activities - List
 
@@ -210,10 +214,15 @@ public sealed partial class GarminClient
         if (result.CreatedId is > 0)
             return result.CreatedId.Value;
 
-        // Log the full response for debugging when no ID is found
+        // Garmin upload is async (HTTP 202) - poll status endpoint for activity ID
+        if (result.UploadUuid?.Uuid is not null && result.CreationDate is not null)
+        {
+            return await PollUploadStatusAsync(result, cancellationToken).ConfigureAwait(false);
+        }
+
         _logger?.LogWarning(
-            "Upload returned no activity ID. UploadId={UploadId}, CreatedId={CreatedId}, Successes={Successes}, Failures={Failures}",
-            result.UploadId, result.CreatedId, result.Successes?.Count ?? 0, result.Failures?.Count ?? 0);
+            "Upload returned no activity ID and no UUID for polling. UploadId={UploadId}, CreatedId={CreatedId}",
+            result.UploadId, result.CreatedId);
 
         throw new GarminConnectException(
             $"Activity upload completed but no activity ID returned (uploadId={result.UploadId}, createdId={result.CreatedId})");
@@ -231,6 +240,121 @@ public sealed partial class GarminClient
 
     #endregion
 
+    #region Upload Status Polling
+
+    private async Task<long> PollUploadStatusAsync(DetailedImportResult result, CancellationToken cancellationToken)
+    {
+        var uuid = result.UploadUuid!.Uuid!;
+        var uuidNoDashes = uuid.Replace("-", "");
+        var epochMs = ParseCreationDateToEpochMs(result.CreationDate!);
+        var statusUrl = string.Format(Endpoints.ActivityUploadStatus, epochMs, uuidNoDashes);
+
+        _logger?.LogInformation(
+            "Upload is processing async (uploadId={UploadId}), polling status...",
+            result.UploadId);
+
+        for (var attempt = 1; attempt <= UploadPollMaxAttempts; attempt++)
+        {
+            await Task.Delay(UploadPollIntervalMs, cancellationToken).ConfigureAwait(false);
+
+            try
+            {
+                var statusJson = await _apiClient.GetAsync<JsonElement>(statusUrl, cancellationToken).ConfigureAwait(false);
+
+                // Response might wrap in detailedImportResult or be the result directly
+                var target = statusJson.TryGetProperty("detailedImportResult", out var importResult)
+                    ? importResult
+                    : statusJson;
+
+                if (TryGetActivityIdFromJson(target, out var activityId))
+                {
+                    _logger?.LogInformation(
+                        "Upload processing complete, activityId={ActivityId} (poll attempt {Attempt})",
+                        activityId, attempt);
+                    return activityId;
+                }
+
+                if (HasFailuresInJson(target, out var errorMessage))
+                {
+                    throw new GarminConnectException($"Activity upload failed during processing: {errorMessage}");
+                }
+
+                _logger?.LogDebug("Upload still processing (attempt {Attempt}/{Max})", attempt, UploadPollMaxAttempts);
+            }
+            catch (GarminConnectException) { throw; }
+            catch (Exception ex)
+            {
+                _logger?.LogWarning(ex, "Error polling upload status (attempt {Attempt})", attempt);
+            }
+        }
+
+        throw new GarminConnectException(
+            $"Activity upload timed out after {UploadPollMaxAttempts}s waiting for processing (uploadId={result.UploadId})");
+    }
+
+    private static bool TryGetActivityIdFromJson(JsonElement json, out long activityId)
+    {
+        activityId = 0;
+
+        if (json.TryGetProperty("successes", out var successes) &&
+            successes.ValueKind == JsonValueKind.Array &&
+            successes.GetArrayLength() > 0)
+        {
+            var first = successes[0];
+            if (first.TryGetProperty("internalId", out var internalId) &&
+                internalId.ValueKind == JsonValueKind.Number)
+            {
+                activityId = internalId.GetInt64();
+                return activityId > 0;
+            }
+        }
+
+        if (json.TryGetProperty("createdId", out var createdId) &&
+            createdId.ValueKind == JsonValueKind.Number)
+        {
+            activityId = createdId.GetInt64();
+            return activityId > 0;
+        }
+
+        return false;
+    }
+
+    private static bool HasFailuresInJson(JsonElement json, out string errorMessage)
+    {
+        errorMessage = "Unknown error";
+        if (json.TryGetProperty("failures", out var failures) &&
+            failures.ValueKind == JsonValueKind.Array &&
+            failures.GetArrayLength() > 0)
+        {
+            var first = failures[0];
+            if (first.TryGetProperty("messages", out var messages) &&
+                messages.ValueKind == JsonValueKind.Array &&
+                messages.GetArrayLength() > 0 &&
+                messages[0].TryGetProperty("content", out var content))
+            {
+                errorMessage = content.GetString() ?? "Unknown error";
+            }
+
+            return true;
+        }
+
+        return false;
+    }
+
+    private static long ParseCreationDateToEpochMs(string creationDate)
+    {
+        // Format: "2023-09-29 01:58:19.113 GMT"
+        var cleaned = creationDate.Replace(" GMT", "").Trim();
+        var dt = DateTimeOffset.ParseExact(
+            cleaned,
+            ["yyyy-MM-dd HH:mm:ss.fff", "yyyy-MM-dd HH:mm:ss"],
+            CultureInfo.InvariantCulture,
+            DateTimeStyles.AssumeUniversal);
+        return dt.ToUnixTimeMilliseconds();
+    }
+
+    #endregion
+
     #region Upload Response DTOs
 
     private record UploadResponse
@@ -242,8 +366,15 @@ public sealed partial class GarminClient
     {
         public long? CreatedId { get; init; }
         public long? UploadId { get; init; }
+        public UploadUuidWrapper? UploadUuid { get; init; }
+        public string? CreationDate { get; init; }
         public List<UploadSuccess>? Successes { get; init; }
         public List<UploadFailure>? Failures { get; init; }
+    }
+
+    private record UploadUuidWrapper
+    {
+        public string? Uuid { get; init; }
     }
 
     private record UploadSuccess
